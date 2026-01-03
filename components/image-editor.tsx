@@ -11,6 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { Upload, ImageIcon, Sparkles, X, Copy, Loader2, Lock, ArrowRight } from "lucide-react"
+import { useToast } from "@/hooks/use-toast"
+import { ScrollArea } from "@/components/ui/scroll-area"
 
 export function ImageEditor() {
   const [uploadedImages, setUploadedImages] = useState<string[]>([])
@@ -18,7 +20,10 @@ export function ImageEditor() {
   const [model, setModel] = useState("nano-banana")
   const [isGenerating, setIsGenerating] = useState(false)
   const [generatedImage, setGeneratedImage] = useState<string | null>(null)
+  const [generatedText, setGeneratedText] = useState<string | null>(null)
+  const [debugData, setDebugData] = useState<any>(null)
   const [dragActive, setDragActive] = useState(false)
+  const { toast } = useToast()
 
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault()
@@ -64,13 +69,100 @@ export function ImageEditor() {
   }
 
   const handleGenerate = async () => {
-    if (!prompt.trim()) return
+    if (!prompt.trim()) {
+      toast({
+        title: "Prompt required",
+        description: "Please enter a prompt to generate an image.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (uploadedImages.length === 0) {
+      toast({
+        title: "Image required",
+        description: "Please upload a reference image.",
+        variant: "destructive",
+      })
+      return
+    }
 
     setIsGenerating(true)
-    // Simulate AI generation
-    await new Promise((resolve) => setTimeout(resolve, 2000))
-    setGeneratedImage("/ai-generated-artistic-image.jpg")
-    setIsGenerating(false)
+    setGeneratedImage(null)
+    setGeneratedText(null)
+    setDebugData(null)
+
+    try {
+      const response = await fetch("/api/generate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          image: uploadedImages[0],
+          prompt: prompt,
+        }),
+      })
+
+      const data = await response.json()
+      setDebugData(data)
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to generate image")
+      }
+
+      if (data.full_response) {
+        const message = data.full_response.choices?.[0]?.message;
+        // Check for non-standard 'images' field in the message object (OpenRouter specific)
+        if (message?.images && Array.isArray(message.images) && message.images.length > 0) {
+           const imgObj = message.images[0];
+           if (imgObj.image_url?.url) {
+             setGeneratedImage(imgObj.image_url.url);
+             // Use content as description if available
+             if (message.content) {
+               setGeneratedText(message.content);
+             }
+             return; // Exit early since we found the image
+           }
+        }
+      }
+
+      if (data.result) {
+        // Parse for markdown image URL: ![alt](url)
+        const markdownImageRegex = /!\[.*?\]\((.*?)\)/
+        const urlRegex = /(https?:\/\/[^\s]+)/
+        
+        const markdownMatch = data.result.match(markdownImageRegex)
+        const urlMatch = data.result.match(urlRegex)
+        
+        const imageUrl = markdownMatch ? markdownMatch[1] : (urlMatch ? urlMatch[0] : null)
+
+        if (imageUrl) {
+           setGeneratedImage(imageUrl)
+           // If there is also text accompanying the image, we could optionally show it too, 
+           // but the primary goal is to show the image.
+           if (data.result !== imageUrl) {
+             setGeneratedText(data.result.replace(markdownImageRegex, '').trim())
+           }
+        } else {
+           setGeneratedText(data.result)
+           toast({
+             title: "Analysis Complete",
+             description: "The model has processed your image.",
+           })
+        }
+      }
+    } catch (error) {
+      console.error("Generation error:", error)
+      setDebugData((prev: any) => ({ ...prev, error: error instanceof Error ? error.message : "Unknown error" }))
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Something went wrong",
+        variant: "destructive",
+      })
+    } finally {
+      setIsGenerating(false)
+    }
   }
 
   return (
@@ -239,13 +331,18 @@ export function ImageEditor() {
               <CardDescription>Your ultra-fast AI creations appear here instantly</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="aspect-square rounded-lg bg-muted/50 border-2 border-dashed border-border flex flex-col items-center justify-center">
+              <div className="aspect-square rounded-lg bg-muted/50 border-2 border-dashed border-border flex flex-col items-center justify-center relative overflow-hidden">
                 {generatedImage ? (
                   <img
                     src={generatedImage || "/placeholder.svg"}
                     alt="Generated"
                     className="w-full h-full object-cover rounded-lg"
                   />
+                ) : generatedText ? (
+                  <ScrollArea className="h-full w-full p-6 text-left">
+                    <p className="font-medium text-foreground mb-2">AI Analysis Result:</p>
+                    <p className="text-muted-foreground whitespace-pre-wrap">{generatedText}</p>
+                  </ScrollArea>
                 ) : (
                   <>
                     <div className="w-16 h-16 rounded-full bg-yellow-100 flex items-center justify-center mb-4">
@@ -258,6 +355,14 @@ export function ImageEditor() {
                   </>
                 )}
               </div>
+              
+              {/* Debug Data View */}
+              {debugData && (
+                <div className="mt-4 p-2 bg-black/10 rounded text-[10px] font-mono overflow-auto max-h-32 w-full text-left">
+                  <p className="font-bold mb-1">Debug Info:</p>
+                  <pre>{JSON.stringify(debugData, null, 2)}</pre>
+                </div>
+              )}
 
               <div className="mt-6 p-4 rounded-lg bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200/50">
                 <p className="text-sm text-yellow-800 mb-2">Want more powerful image generation features?</p>
