@@ -21,7 +21,6 @@ export function ImageEditor() {
   const [isGenerating, setIsGenerating] = useState(false)
   const [generatedImage, setGeneratedImage] = useState<string | null>(null)
   const [generatedText, setGeneratedText] = useState<string | null>(null)
-  const [debugData, setDebugData] = useState<any>(null)
   const [dragActive, setDragActive] = useState(false)
   const { toast } = useToast()
 
@@ -90,7 +89,6 @@ export function ImageEditor() {
     setIsGenerating(true)
     setGeneratedImage(null)
     setGeneratedText(null)
-    setDebugData(null)
 
     try {
       const response = await fetch("/api/generate", {
@@ -105,7 +103,6 @@ export function ImageEditor() {
       })
 
       const data = await response.json()
-      setDebugData(data)
 
       if (!response.ok) {
         throw new Error(data.error || "Failed to generate image")
@@ -154,7 +151,6 @@ export function ImageEditor() {
       }
     } catch (error) {
       console.error("Generation error:", error)
-      setDebugData((prev: any) => ({ ...prev, error: error instanceof Error ? error.message : "Unknown error" }))
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Something went wrong",
@@ -356,13 +352,7 @@ export function ImageEditor() {
                 )}
               </div>
               
-              {/* Debug Data View */}
-              {debugData && (
-                <div className="mt-4 p-2 bg-black/10 rounded text-[10px] font-mono overflow-auto max-h-32 w-full text-left">
-                  <p className="font-bold mb-1">Debug Info:</p>
-                  <pre>{JSON.stringify(debugData, null, 2)}</pre>
-                </div>
-              )}
+
 
               <div className="mt-6 p-4 rounded-lg bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200/50">
                 <p className="text-sm text-yellow-800 mb-2">Want more powerful image generation features?</p>
