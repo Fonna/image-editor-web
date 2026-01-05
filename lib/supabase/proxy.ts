@@ -8,7 +8,7 @@ export async function updateSession(request: NextRequest) {
 
   if (!supabaseUrl || !supabaseKey) {
     console.error(
-      'Middleware Error: Missing Supabase environment variables (NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY). Check your Vercel project settings.'
+      'Proxy Error: Missing Supabase environment variables (NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY). Check your Vercel project settings.'
     )
     // Return the request as-is so the site doesn't crash, though auth won't work.
     return NextResponse.next({
@@ -66,7 +66,7 @@ export async function updateSession(request: NextRequest) {
       // return NextResponse.redirect(url)
     }
   } catch (error) {
-    console.error('Middleware Supabase Error:', error)
+    console.error('Proxy Supabase Error:', error)
     // In case of any other error, return the original response to avoid blocking the user
     return NextResponse.next({
       request: {

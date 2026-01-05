@@ -2,12 +2,12 @@
 
 This document records issues encountered during the deployment of the Next.js + Supabase application on Vercel and their solutions.
 
-## Issue 1: 500 INTERNAL_SERVER_ERROR (Middleware Invocation Failed)
+## Issue 1: 500 INTERNAL_SERVER_ERROR (Proxy Invocation Failed)
 
 **Error Message:**
 ```
 500: INTERNAL_SERVER_ERROR
-Code: MIDDLEWARE_INVOCATION_FAILED
+Code: PROXY_INVOCATION_FAILED
 ID: pdx1::...
 ```
 
@@ -22,7 +22,7 @@ Missing environment variables in Vercel. While `.env.local` works for local deve
 3. **Redeploy** the project (Settings -> Deployments -> Redeploy) for changes to take effect. Do not use build cache if possible.
 
 **Code Hardening (Optional but Recommended):**
-Update `lib/supabase/middleware.ts` to include a try-catch block and check for missing environment variables. This prevents the entire site from crashing (returning 500) if variables are missing, allowing debug logs to be seen.
+Update `lib/supabase/proxy.ts` to include a try-catch block and check for missing environment variables. This prevents the entire site from crashing (returning 500) if variables are missing, allowing debug logs to be seen.
 
 ---
 
