@@ -1,7 +1,15 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import { GoogleSignInButton } from "@/components/google-signin-button"
+import { SignOutButton } from "@/components/sign-out-button"
+import { createClient } from "@/lib/supabase/server"
 
-export function Header() {
+export async function Header() {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
@@ -26,9 +34,11 @@ export function Header() {
         </nav>
 
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" className="hidden sm:inline-flex">
-            Sign In
-          </Button>
+          {user ? (
+            <SignOutButton />
+          ) : (
+            <GoogleSignInButton variant="ghost" size="sm" className="hidden sm:inline-flex" />
+          )}
           <Button size="sm" className="bg-yellow-400 text-yellow-950 hover:bg-yellow-500">
             Get Started
           </Button>
