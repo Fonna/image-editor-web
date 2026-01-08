@@ -7,7 +7,7 @@ export function Footer() {
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-2">
             <span className="text-2xl">🍌</span>
-            <span className="text-lg font-bold text-foreground">Nano Banana</span>
+            <span className="text-lg font-bold text-foreground">BananaImage</span>
           </div>
 
           <nav className="flex items-center gap-6">
@@ -22,7 +22,7 @@ export function Footer() {
             </Link>
           </nav>
 
-          <p className="text-sm text-muted-foreground">© 2026 Nano Banana. All rights reserved.</p>
+          <p className="text-sm text-muted-foreground">© 2026 BananaImage. All rights reserved.</p>
         </div>
       </div>
     </footer>

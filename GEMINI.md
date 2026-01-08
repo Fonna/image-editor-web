@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-This project is a Next.js web application designed as a clone of an AI-powered image editing interface (referencing "Nano Banana"). It provides a rich user interface for users to upload images, enter prompts, and select models for image transformation.
+This project is a Next.js web application designed as a clone of an AI-powered image editing interface (referencing "BananaImage"). It provides a rich user interface for users to upload images, enter prompts, and select models for image transformation.
 
 **Key Technologies:**
 
@@ -59,6 +59,12 @@ This project uses `npm` (or `pnpm`/`yarn`) for dependency management and script 
     ```bash
     npm run lint
     ```
+
+## Deployment
+
+*   **Platform:** [Vercel](https://vercel.com)
+*   **Workflow:** Automated deployments are triggered on every push to the `main` branch via GitHub integration.
+*   **Environment Variables:** Ensure all required environment variables (e.g., Supabase, AI API keys) are configured in the Vercel project settings.
 
 ## Development Conventions
 

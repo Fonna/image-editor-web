@@ -13,7 +13,7 @@ export function Hero() {
         </Badge>
 
         <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight text-foreground mb-6 text-balance">
-          Nano Banana
+          BananaImage
         </h1>
 
         <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto mb-10 text-pretty">

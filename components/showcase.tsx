@@ -33,7 +33,7 @@ export function Showcase() {
         <div className="text-center mb-16">
           <h2 className="text-sm font-semibold text-yellow-600 uppercase tracking-wide mb-2">Showcase</h2>
           <h3 className="text-3xl md:text-4xl font-bold text-foreground mb-4">Lightning-Fast AI Creations</h3>
-          <p className="text-muted-foreground max-w-2xl mx-auto">See what Nano Banana generates in milliseconds</p>
+          <p className="text-muted-foreground max-w-2xl mx-auto">See what BananaImage generates in milliseconds</p>
         </div>
 
         <div className="grid md:grid-cols-2 gap-6 max-w-5xl mx-auto">
@@ -59,10 +59,10 @@ export function Showcase() {
         </div>
 
         <div className="text-center mt-12">
-          <p className="text-muted-foreground mb-4">Experience the power of Nano Banana yourself</p>
+          <p className="text-muted-foreground mb-4">Experience the power of BananaImage yourself</p>
           <Button className="bg-yellow-400 text-yellow-950 hover:bg-yellow-500 gap-2">
             <span className="text-lg">🍌</span>
-            Try Nano Banana Generator
+            Try BananaImage Generator
           </Button>
         </div>
       </div>

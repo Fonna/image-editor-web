@@ -1,6 +1,6 @@
-# Nano Banana 🍌
+# BananaImage 🍌
 
-**Nano Banana** is a modern, AI-powered image editor interface built with **Next.js 16**, **Tailwind CSS v4**, and **Supabase**. It features a sleek, responsive design and robust server-side authentication.
+**BananaImage** is a modern, AI-powered image editor interface built with **Next.js 16**, **Tailwind CSS v4**, and **Supabase**. It features a sleek, responsive design and robust server-side authentication.
 
 ## ✨ Features
 

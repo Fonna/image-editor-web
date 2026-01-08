@@ -43,9 +43,9 @@ export function Features() {
       <div className="container mx-auto px-4">
         <div className="text-center mb-16">
           <h2 className="text-sm font-semibold text-yellow-600 uppercase tracking-wide mb-2">Core Features</h2>
-          <h3 className="text-3xl md:text-4xl font-bold text-foreground mb-4">Why Choose Nano Banana?</h3>
+          <h3 className="text-3xl md:text-4xl font-bold text-foreground mb-4">Why Choose BananaImage?</h3>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Nano-banana is the most advanced AI image editor on LMArena. Revolutionize your photo editing with natural
+            BananaImage is the most advanced AI image editor on LMArena. Revolutionize your photo editing with natural
             language understanding
           </p>
         </div>
