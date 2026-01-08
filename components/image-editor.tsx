@@ -22,6 +22,7 @@ export function ImageEditor({ compact = false }: { compact?: boolean }) {
   const [generatedImage, setGeneratedImage] = useState<string | null>(null)
   const [generatedText, setGeneratedText] = useState<string | null>(null)
   const [dragActive, setDragActive] = useState(false)
+  const [mode, setMode] = useState("image-to-image")
   const { toast } = useToast()
 
   const handleDrag = useCallback((e: React.DragEvent) => {
@@ -77,7 +78,7 @@ export function ImageEditor({ compact = false }: { compact?: boolean }) {
       return
     }
 
-    if (uploadedImages.length === 0) {
+    if (mode === "image-to-image" && uploadedImages.length === 0) {
       toast({
         title: "Image required",
         description: "Please upload a reference image.",
@@ -97,8 +98,9 @@ export function ImageEditor({ compact = false }: { compact?: boolean }) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          image: uploadedImages[0],
+          image: mode === "image-to-image" ? uploadedImages[0] : undefined,
           prompt: prompt,
+          mode: mode,
         }),
       })
 
@@ -108,18 +110,26 @@ export function ImageEditor({ compact = false }: { compact?: boolean }) {
         throw new Error(data.error || "Failed to generate image")
       }
 
+      // 1. Check for direct imageUrl from our new backend logic
+      if (data.imageUrl) {
+        setGeneratedImage(data.imageUrl);
+        if (data.result) setGeneratedText(data.result);
+        return;
+      }
+
+      // 2. Fallback to parsing full_response
       if (data.full_response) {
         const message = data.full_response.choices?.[0]?.message;
-        // Check for non-standard 'images' field in the message object (OpenRouter specific)
+        // Check for 'images' field (supporting both camelCase and snake_case inside)
         if (message?.images && Array.isArray(message.images) && message.images.length > 0) {
            const imgObj = message.images[0];
-           if (imgObj.image_url?.url) {
-             setGeneratedImage(imgObj.image_url.url);
-             // Use content as description if available
+           const url = imgObj.imageUrl?.url || imgObj.image_url?.url;
+           if (url) {
+             setGeneratedImage(url);
              if (message.content) {
                setGeneratedText(message.content);
              }
-             return; // Exit early since we found the image
+             return;
            }
         }
       }
@@ -187,7 +197,7 @@ export function ImageEditor({ compact = false }: { compact?: boolean }) {
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Tabs */}
-              <Tabs defaultValue="image-to-image">
+              <Tabs value={mode} onValueChange={setMode}>
                 <TabsList className="grid w-full grid-cols-2">
                   <TabsTrigger value="image-to-image">Image to Image</TabsTrigger>
                   <TabsTrigger value="text-to-image">Text to Image</TabsTrigger>
@@ -211,52 +221,54 @@ export function ImageEditor({ compact = false }: { compact?: boolean }) {
               </div>
 
               {/* Image Upload */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label className="text-sm font-medium">Reference Image</Label>
-                  <span className="text-xs text-muted-foreground">{uploadedImages.length}/9</span>
-                </div>
+              {mode === "image-to-image" && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm font-medium">Reference Image</Label>
+                    <span className="text-xs text-muted-foreground">{uploadedImages.length}/9</span>
+                  </div>
 
-                <div className="grid grid-cols-4 gap-2">
-                  {uploadedImages.map((img, index) => (
-                    <div
-                      key={index}
-                      className="relative aspect-square rounded-lg overflow-hidden border border-border group"
-                    >
-                      <img
-                        src={img || "/placeholder.svg"}
-                        alt={`Upload ${index + 1}`}
-                        className="w-full h-full object-cover"
-                      />
-                      <button
-                        onClick={() => removeImage(index)}
-                        className="absolute top-1 right-1 p-1 rounded-full bg-black/50 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                  <div className="grid grid-cols-4 gap-2">
+                    {uploadedImages.map((img, index) => (
+                      <div
+                        key={index}
+                        className="relative aspect-square rounded-lg overflow-hidden border border-border group"
                       >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </div>
-                  ))}
+                        <img
+                          src={img || "/placeholder.svg"}
+                          alt={`Upload ${index + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                        <button
+                          onClick={() => removeImage(index)}
+                          className="absolute top-1 right-1 p-1 rounded-full bg-black/50 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
 
-                  {uploadedImages.length < 9 && (
-                    <label
-                      className={`aspect-square rounded-lg border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-colors ${
-                        dragActive
-                          ? "border-yellow-400 bg-yellow-50"
-                          : "border-border hover:border-yellow-400/50 hover:bg-muted/50"
-                      }`}
-                      onDragEnter={handleDrag}
-                      onDragLeave={handleDrag}
-                      onDragOver={handleDrag}
-                      onDrop={handleDrop}
-                    >
-                      <Upload className="h-5 w-5 text-muted-foreground mb-1" />
-                      <span className="text-xs text-muted-foreground">Add Image</span>
-                      <span className="text-xs text-muted-foreground/70">Max 10MB</span>
-                      <input type="file" accept="image/*" multiple className="hidden" onChange={handleFileInput} />
-                    </label>
-                  )}
+                    {uploadedImages.length < 9 && (
+                      <label
+                        className={`aspect-square rounded-lg border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-colors ${
+                          dragActive
+                            ? "border-yellow-400 bg-yellow-50"
+                            : "border-border hover:border-yellow-400/50 hover:bg-muted/50"
+                        }`}
+                        onDragEnter={handleDrag}
+                        onDragLeave={handleDrag}
+                        onDragOver={handleDrag}
+                        onDrop={handleDrop}
+                      >
+                        <Upload className="h-5 w-5 text-muted-foreground mb-1" />
+                        <span className="text-xs text-muted-foreground">Add Image</span>
+                        <span className="text-xs text-muted-foreground/70">Max 10MB</span>
+                        <input type="file" accept="image/*" multiple className="hidden" onChange={handleFileInput} />
+                      </label>
+                    )}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Prompt Input */}
               <div className="space-y-2">
@@ -332,8 +344,6 @@ export function ImageEditor({ compact = false }: { compact?: boolean }) {
                 )}
               </div>
               
-
-
               <div className="mt-6 p-4 rounded-lg bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200/50">
                 <p className="text-sm text-yellow-800 mb-2">Want more powerful image generation features?</p>
                 <Button variant="link" className="p-0 h-auto text-yellow-700 gap-1">
