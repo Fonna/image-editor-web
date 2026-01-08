@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { Banana } from "lucide-react"
 
 export function Footer() {
   return (
@@ -6,7 +7,9 @@ export function Footer() {
       <div className="container mx-auto px-4">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-2">
-            <span className="text-2xl">🍌</span>
+            <div className="bg-yellow-400/10 p-1.5 rounded-lg">
+              <Banana className="h-5 w-5 text-yellow-400" />
+            </div>
             <span className="text-lg font-bold text-foreground">BananaImage</span>
           </div>
 

@@ -15,8 +15,8 @@ export async function Header() {
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <Link href="/" className="flex items-center space-x-2">
-          <div className="bg-primary/10 p-2 rounded-xl">
-            <Banana className="h-6 w-6 text-primary" />
+          <div className="bg-yellow-400/10 p-2 rounded-xl">
+            <Banana className="h-6 w-6 text-yellow-400" />
           </div>
           <span className="text-xl font-bold text-foreground">BananaImage</span>
         </Link>
