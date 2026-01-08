@@ -77,6 +77,10 @@ This project uses `npm` (or `pnpm`/`yarn`) for dependency management and script 
     *   Example: `import { Button } from "@/components/ui/button"`
 *   **Icons:** Use icons from `lucide-react`.
 
+## Operational Rules
+
+*   **GitHub Interactions:** Do not push to the remote GitHub repository automatically. Always ask for explicit user permission before executing `git push`.
+
 ## Key Features (Current Implementation)
 
 *   **Image Editor Interface:**
