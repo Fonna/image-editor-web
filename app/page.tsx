@@ -3,7 +3,6 @@ import { Hero } from "@/components/hero"
 import { ImageEditor } from "@/components/image-editor"
 import { Features } from "@/components/features"
 import { Showcase } from "@/components/showcase"
-import { Reviews } from "@/components/reviews"
 import { FAQ } from "@/components/faq"
 import { Footer } from "@/components/footer"
 import { BananaDecorations } from "@/components/banana-decorations"
@@ -17,7 +16,6 @@ export default function Home() {
       <ImageEditor />
       <Features />
       <Showcase />
-      <Reviews />
       <FAQ />
       <Footer />
     </main>
