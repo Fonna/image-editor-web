@@ -31,6 +31,9 @@ export async function Header() {
           <Link href="#showcase" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
             Showcase
           </Link>
+          <Link href="#pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+            Pricing
+          </Link>
           <Link href="#faq" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
             FAQ
           </Link>
