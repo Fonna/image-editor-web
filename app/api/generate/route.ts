@@ -14,17 +14,17 @@ export async function POST(req: Request) {
   try {
     const { image, prompt } = await req.json();
 
+    if (!image) {
+      return NextResponse.json({ error: "No image provided" }, { status: 400 });
+    }
+
     if (!prompt) {
       return NextResponse.json({ error: "No prompt provided" }, { status: 400 });
     }
 
-    let model = "";
-    let messages = [];
-
-    if (image) {
-      // Vision/Image Editing Mode
-      model = "google/gemini-2.0-flash-exp:free";
-      messages = [
+    const completion = await openai.chat.completions.create({
+      model: "google/gemini-2.5-flash-image",
+      messages: [
         {
           role: "user",
           content: [
@@ -35,28 +35,17 @@ export async function POST(req: Request) {
             {
               type: "image_url",
               image_url: {
-                url: image,
+                url: image, // Assuming base64 data URL
               },
             },
           ],
         },
-      ];
-    } else {
-      // Text to Image Mode
-      model = "black-forest-labs/flux-1-schnell:free";
-      messages = [
-        {
-          role: "user",
-          content: prompt,
-        },
-      ];
-    }
-
-    const completion = await openai.chat.completions.create({
-      model: model,
-      messages: messages as any,
+      ],
     });
 
+    // The API is likely to return text describing the image or the result of the prompt.
+    // If the user expects an image *generation* (editing), this API might just return text.
+    // However, we will return the message content.
     const result = completion.choices[0].message.content;
 
     return NextResponse.json({ result, full_response: completion });

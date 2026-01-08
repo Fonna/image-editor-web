@@ -18,7 +18,6 @@ export function ImageEditor({ compact = false }: { compact?: boolean }) {
   const [uploadedImages, setUploadedImages] = useState<string[]>([])
   const [prompt, setPrompt] = useState("")
   const [model, setModel] = useState("nano-banana")
-  const [mode, setMode] = useState("image-to-image")
   const [isGenerating, setIsGenerating] = useState(false)
   const [generatedImage, setGeneratedImage] = useState<string | null>(null)
   const [generatedText, setGeneratedText] = useState<string | null>(null)
@@ -78,7 +77,7 @@ export function ImageEditor({ compact = false }: { compact?: boolean }) {
       return
     }
 
-    if (mode === "image-to-image" && uploadedImages.length === 0) {
+    if (uploadedImages.length === 0) {
       toast({
         title: "Image required",
         description: "Please upload a reference image.",
@@ -98,7 +97,7 @@ export function ImageEditor({ compact = false }: { compact?: boolean }) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          image: mode === "image-to-image" ? uploadedImages[0] : undefined,
+          image: uploadedImages[0],
           prompt: prompt,
         }),
       })
@@ -188,7 +187,7 @@ export function ImageEditor({ compact = false }: { compact?: boolean }) {
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Tabs */}
-              <Tabs value={mode} onValueChange={setMode}>
+              <Tabs defaultValue="image-to-image">
                 <TabsList className="grid w-full grid-cols-2">
                   <TabsTrigger value="image-to-image">Image to Image</TabsTrigger>
                   <TabsTrigger value="text-to-image">Text to Image</TabsTrigger>
@@ -212,54 +211,52 @@ export function ImageEditor({ compact = false }: { compact?: boolean }) {
               </div>
 
               {/* Image Upload */}
-              {mode === "image-to-image" && (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-sm font-medium">Reference Image</Label>
-                    <span className="text-xs text-muted-foreground">{uploadedImages.length}/9</span>
-                  </div>
-
-                  <div className="grid grid-cols-4 gap-2">
-                    {uploadedImages.map((img, index) => (
-                      <div
-                        key={index}
-                        className="relative aspect-square rounded-lg overflow-hidden border border-border group"
-                      >
-                        <img
-                          src={img || "/placeholder.svg"}
-                          alt={`Upload ${index + 1}`}
-                          className="w-full h-full object-cover"
-                        />
-                        <button
-                          onClick={() => removeImage(index)}
-                          className="absolute top-1 right-1 p-1 rounded-full bg-black/50 text-white opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </div>
-                    ))}
-
-                    {uploadedImages.length < 9 && (
-                      <label
-                        className={`aspect-square rounded-lg border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-colors ${
-                          dragActive
-                            ? "border-yellow-400 bg-yellow-50"
-                            : "border-border hover:border-yellow-400/50 hover:bg-muted/50"
-                        }`}
-                        onDragEnter={handleDrag}
-                        onDragLeave={handleDrag}
-                        onDragOver={handleDrag}
-                        onDrop={handleDrop}
-                      >
-                        <Upload className="h-5 w-5 text-muted-foreground mb-1" />
-                        <span className="text-xs text-muted-foreground">Add Image</span>
-                        <span className="text-xs text-muted-foreground/70">Max 10MB</span>
-                        <input type="file" accept="image/*" multiple className="hidden" onChange={handleFileInput} />
-                      </label>
-                    )}
-                  </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-medium">Reference Image</Label>
+                  <span className="text-xs text-muted-foreground">{uploadedImages.length}/9</span>
                 </div>
-              )}
+
+                <div className="grid grid-cols-4 gap-2">
+                  {uploadedImages.map((img, index) => (
+                    <div
+                      key={index}
+                      className="relative aspect-square rounded-lg overflow-hidden border border-border group"
+                    >
+                      <img
+                        src={img || "/placeholder.svg"}
+                        alt={`Upload ${index + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                      <button
+                        onClick={() => removeImage(index)}
+                        className="absolute top-1 right-1 p-1 rounded-full bg-black/50 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+
+                  {uploadedImages.length < 9 && (
+                    <label
+                      className={`aspect-square rounded-lg border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-colors ${
+                        dragActive
+                          ? "border-yellow-400 bg-yellow-50"
+                          : "border-border hover:border-yellow-400/50 hover:bg-muted/50"
+                      }`}
+                      onDragEnter={handleDrag}
+                      onDragLeave={handleDrag}
+                      onDragOver={handleDrag}
+                      onDrop={handleDrop}
+                    >
+                      <Upload className="h-5 w-5 text-muted-foreground mb-1" />
+                      <span className="text-xs text-muted-foreground">Add Image</span>
+                      <span className="text-xs text-muted-foreground/70">Max 10MB</span>
+                      <input type="file" accept="image/*" multiple className="hidden" onChange={handleFileInput} />
+                    </label>
+                  )}
+                </div>
+              </div>
 
               {/* Prompt Input */}
               <div className="space-y-2">
