@@ -1,0 +1,42 @@
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+
+export default function BillingPage() {
+  return (
+    <div className="max-w-4xl mx-auto w-full">
+      <h1 className="text-2xl font-bold mb-6">Billing & Usage</h1>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>Recharge History</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Date</TableHead>
+                <TableHead>Description</TableHead>
+                <TableHead>Amount</TableHead>
+                <TableHead className="text-right">Status</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow>
+                <TableCell className="text-center py-8 text-muted-foreground" colSpan={4}>
+                  No recharge records found.
+                </TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}

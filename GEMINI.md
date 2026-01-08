@@ -79,11 +79,10 @@ This project uses `npm` (or `pnpm`/`yarn`) for dependency management and script 
 
 ## Operational Rules
 
-*   **GitHub Interactions:**
-    *   **STRICT:** Do not push to the remote GitHub repository automatically.
-    *   **ALWAYS** ask for explicit user permission (wait for "yes") before executing `git push`.
-    *   **NEVER** make the decision to push on your own, even if the task seems complete.
-    *   **Confirmation:** Explicitly confirm with the user after a commit is created if they are ready to push.
+*   **Version Control Protocol:**
+    *   **No Automatic Git State Changes:** Do NOT automatically stage (`git add`), commit (`git commit`), or push (`git push`) changes.
+    *   **Modifications Only:** You may modify files (`write_file`, `replace`) and verify them (`npm run build`).
+    *   **Explicit Confirmation Required:** After completing edits, you must present the status to the user. **WAIT** for explicit instructions or confirmation (e.g., "Ready to commit", "Push it") before running *any* git commands that alter the repository history or staging area.
 
 ## Key Features (Current Implementation)
 
