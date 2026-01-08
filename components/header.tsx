@@ -42,8 +42,8 @@ export async function Header() {
           ) : (
             <GoogleSignInButton variant="ghost" size="sm" className="hidden sm:inline-flex" />
           )}
-          <Button size="sm" className="bg-yellow-400 text-yellow-950 hover:bg-yellow-500">
-            Get Started
+          <Button size="sm" className="bg-yellow-400 text-yellow-950 hover:bg-yellow-500" asChild>
+            <a href="#editor">Get Started</a>
           </Button>
         </div>
       </div>

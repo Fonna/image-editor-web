@@ -22,10 +22,12 @@ export function Hero() {
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <Button size="lg" className="bg-yellow-400 text-yellow-950 hover:bg-yellow-500 gap-2 text-base px-8">
-            <Sparkles className="h-5 w-5" />
-            Start Editing
-            <span className="text-xl">🍌</span>
+          <Button size="lg" className="bg-yellow-400 text-yellow-950 hover:bg-yellow-500 gap-2 text-base px-8" asChild>
+            <a href="#editor">
+              <Sparkles className="h-5 w-5" />
+              Start Editing
+              <span className="text-xl">🍌</span>
+            </a>
           </Button>
           <Button size="lg" variant="outline" className="gap-2 text-base bg-transparent">
             View Examples
