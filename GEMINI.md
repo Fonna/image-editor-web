@@ -79,7 +79,11 @@ This project uses `npm` (or `pnpm`/`yarn`) for dependency management and script 
 
 ## Operational Rules
 
-*   **GitHub Interactions:** Do not push to the remote GitHub repository automatically. Always ask for explicit user permission before executing `git push`.
+*   **GitHub Interactions:**
+    *   **STRICT:** Do not push to the remote GitHub repository automatically.
+    *   **ALWAYS** ask for explicit user permission (wait for "yes") before executing `git push`.
+    *   **NEVER** make the decision to push on your own, even if the task seems complete.
+    *   **Confirmation:** Explicitly confirm with the user after a commit is created if they are ready to push.
 
 ## Key Features (Current Implementation)
 

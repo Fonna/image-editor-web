@@ -14,7 +14,7 @@ import { Upload, ImageIcon, Sparkles, X, Copy, Loader2, Lock, ArrowRight } from 
 import { useToast } from "@/hooks/use-toast"
 import { ScrollArea } from "@/components/ui/scroll-area"
 
-export function ImageEditor() {
+export function ImageEditor({ compact = false }: { compact?: boolean }) {
   const [uploadedImages, setUploadedImages] = useState<string[]>([])
   const [prompt, setPrompt] = useState("")
   const [model, setModel] = useState("nano-banana")
@@ -162,16 +162,18 @@ export function ImageEditor() {
   }
 
   return (
-    <section id="editor" className="py-20 bg-muted/30 scroll-mt-24">
-      <div className="container mx-auto px-4">
-        <div className="text-center mb-12">
-          <h2 className="text-sm font-semibold text-yellow-600 uppercase tracking-wide mb-2">Get Started</h2>
-          <h3 className="text-3xl md:text-4xl font-bold text-foreground">Try The AI Editor</h3>
-          <p className="text-muted-foreground mt-3 max-w-2xl mx-auto">
-            Experience the power of nano-banana's natural language image editing. Transform any photo with simple text
-            commands
-          </p>
-        </div>
+    <section id="editor" className={compact ? "" : "py-20 bg-muted/30 scroll-mt-24"}>
+      <div className={compact ? "" : "container mx-auto px-4"}>
+        {!compact && (
+          <div className="text-center mb-12">
+            <h2 className="text-sm font-semibold text-yellow-600 uppercase tracking-wide mb-2">Get Started</h2>
+            <h3 className="text-3xl md:text-4xl font-bold text-foreground">Try The AI Editor</h3>
+            <p className="text-muted-foreground mt-3 max-w-2xl mx-auto">
+              Experience the power of nano-banana's natural language image editing. Transform any photo with simple text
+              commands
+            </p>
+          </div>
+        )}
 
         <div className="grid lg:grid-cols-2 gap-8 max-w-6xl mx-auto">
           {/* Prompt Engine Card */}

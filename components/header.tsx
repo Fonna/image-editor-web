@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button"
 import { GoogleSignInButton } from "@/components/google-signin-button"
 import { SignOutButton } from "@/components/sign-out-button"
 import { createClient } from "@/lib/supabase/server"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 export async function Header() {
   const supabase = await createClient()
@@ -40,14 +41,22 @@ export async function Header() {
         </nav>
 
         <div className="flex items-center gap-3">
+          <Button size="sm" className="bg-yellow-400 text-yellow-950 hover:bg-yellow-500" asChild>
+            <Link href="#editor">Get Started</Link>
+          </Button>
+          
           {user ? (
-            <SignOutButton />
+            <Link href="/dashboard" aria-label="Go to Dashboard">
+              <Avatar className="h-8 w-8 border border-border/50 transition-transform hover:scale-105">
+                <AvatarImage src={user.user_metadata?.avatar_url} alt={user.email || "User"} />
+                <AvatarFallback className="bg-yellow-100 text-yellow-700">
+                  {user.email?.charAt(0).toUpperCase() || "U"}
+                </AvatarFallback>
+              </Avatar>
+            </Link>
           ) : (
             <GoogleSignInButton variant="ghost" size="sm" className="hidden sm:inline-flex" />
           )}
-          <Button size="sm" className="bg-yellow-400 text-yellow-950 hover:bg-yellow-500" asChild>
-            <a href="#editor">Get Started</a>
-          </Button>
         </div>
       </div>
     </header>

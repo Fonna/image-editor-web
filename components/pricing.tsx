@@ -39,12 +39,12 @@ export function Pricing() {
       await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
         },
       })
     } else {
-      // User is logged in, redirect to dashboard (using #editor as placeholder if dashboard doesn't exist)
-      router.push("#editor")
+      // User is logged in, redirect to dashboard
+      router.push("/dashboard")
     }
   }
 
