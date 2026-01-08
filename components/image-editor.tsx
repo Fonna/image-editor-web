@@ -162,7 +162,7 @@ export function ImageEditor() {
   }
 
   return (
-    <section id="editor" className="py-20 bg-muted/30">
+    <section id="editor" className="py-20 bg-muted/30 scroll-mt-24">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
           <h2 className="text-sm font-semibold text-yellow-600 uppercase tracking-wide mb-2">Get Started</h2>

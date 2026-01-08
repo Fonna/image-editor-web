@@ -1,3 +1,4 @@
+import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -60,9 +61,11 @@ export function Showcase() {
 
         <div className="text-center mt-12">
           <p className="text-muted-foreground mb-4">Experience the power of BananaImage yourself</p>
-          <Button className="bg-yellow-400 text-yellow-950 hover:bg-yellow-500 gap-2">
-            <span className="text-lg">🍌</span>
-            Try BananaImage Generator
+          <Button asChild className="bg-yellow-400 text-yellow-950 hover:bg-yellow-500 gap-2">
+            <Link href="#editor">
+              <span className="text-lg">🍌</span>
+              Try BananaImage Generator
+            </Link>
           </Button>
         </div>
       </div>
