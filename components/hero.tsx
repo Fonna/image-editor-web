@@ -29,10 +29,6 @@ export function Hero() {
               <span className="text-xl">🍌</span>
             </a>
           </Button>
-          <Button size="lg" variant="outline" className="gap-2 text-base bg-transparent">
-            View Examples
-            <ArrowRight className="h-4 w-4" />
-          </Button>
         </div>
 
         <div className="flex items-center justify-center gap-8 mt-12 text-sm text-muted-foreground">

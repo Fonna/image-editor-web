@@ -210,26 +210,6 @@ export function ImageEditor({ compact = false }: { compact?: boolean }) {
                 </p>
               </div>
 
-              {/* Batch Processing */}
-              <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50 border border-border/50">
-                <div className="flex items-center gap-3">
-                  <Switch disabled />
-                  <div>
-                    <Label className="text-sm font-medium flex items-center gap-2">
-                      Batch Processing
-                      <span className="text-xs px-2 py-0.5 rounded bg-yellow-400/20 text-yellow-700">Pro</span>
-                    </Label>
-                    <p className="text-xs text-muted-foreground">
-                      Enable batch mode to process multiple images at once
-                    </p>
-                  </div>
-                </div>
-                <Button variant="outline" size="sm" className="gap-1 bg-transparent">
-                  <Lock className="h-3 w-3" />
-                  Upgrade
-                </Button>
-              </div>
-
               {/* Image Upload */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
