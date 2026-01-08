@@ -203,8 +203,6 @@ export function ImageEditor({ compact = false }: { compact?: boolean }) {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="nano-banana">🍌 Nano Banana</SelectItem>
-                    <SelectItem value="nano-banana-pro">🍌 Nano Banana Pro</SelectItem>
-                    <SelectItem value="seedream">SeeDream 4</SelectItem>
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground">
