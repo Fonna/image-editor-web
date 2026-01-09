@@ -10,16 +10,18 @@ import { BananaDecorations } from "@/components/banana-decorations"
 
 export default function Home() {
   return (
-    <main className="relative min-h-screen bg-background overflow-hidden">
-      <BananaDecorations />
+    <>
       <Header />
-      <Hero />
-      <ImageEditor />
-      <Features />
-      <Showcase />
-      <Pricing />
-      <FAQ />
-      <Footer />
-    </main>
+      <main className="relative min-h-screen bg-background overflow-hidden">
+        <BananaDecorations />
+        <Hero />
+        <ImageEditor />
+        <Features />
+        <Showcase />
+        <Pricing />
+        <FAQ />
+        <Footer />
+      </main>
+    </>
   )
 }
