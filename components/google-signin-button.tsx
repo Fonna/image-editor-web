@@ -18,7 +18,7 @@ export function GoogleSignInButton(props: ComponentProps<typeof Button>) {
 
   return (
     <Button onClick={handleSignIn} {...props}>
-      Sign In
+      {props.children || "Sign In"}
     </Button>
   )
 }

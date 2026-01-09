@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -10,9 +10,12 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
-import { Upload, ImageIcon, Sparkles, X, Copy, Loader2, Lock, ArrowRight } from "lucide-react"
+import { Upload, ImageIcon, Sparkles, X, Copy, Loader2, Lock, ArrowRight, User, UserX } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { createClient } from "@/lib/supabase/client"
+import { GuestLimitDialog } from "@/components/guest-limit-dialog"
+import { GuestWarningDialog } from "@/components/guest-warning-dialog"
 
 export function ImageEditor({ compact = false }: { compact?: boolean }) {
   const [uploadedImages, setUploadedImages] = useState<string[]>([])
@@ -24,6 +27,33 @@ export function ImageEditor({ compact = false }: { compact?: boolean }) {
   const [dragActive, setDragActive] = useState(false)
   const [mode, setMode] = useState("image-to-image")
   const { toast } = useToast()
+  
+  const [user, setUser] = useState<any>(null)
+  const [showGuestLimitDialog, setShowGuestLimitDialog] = useState(false)
+  const [showGuestWarningDialog, setShowGuestWarningDialog] = useState(false)
+  const [guestCount, setGuestCount] = useState(0)
+
+  useEffect(() => {
+    const supabase = createClient()
+    
+    // Check current session
+    supabase.auth.getUser().then(({ data }) => {
+      setUser(data.user)
+    })
+
+    // Listen for changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
+    })
+
+    // Init guest count
+    const storedCount = parseInt(localStorage.getItem("guest_usage_count") || "0", 10)
+    setGuestCount(storedCount)
+
+    return () => {
+      subscription.unsubscribe()
+    }
+  }, [])
 
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault()
@@ -68,28 +98,11 @@ export function ImageEditor({ compact = false }: { compact?: boolean }) {
     setUploadedImages((prev) => prev.filter((_, i) => i !== index))
   }
 
-  const handleGenerate = async () => {
-    if (!prompt.trim()) {
-      toast({
-        title: "Prompt required",
-        description: "Please enter a prompt to generate an image.",
-        variant: "destructive",
-      })
-      return
-    }
-
-    if (mode === "image-to-image" && uploadedImages.length === 0) {
-      toast({
-        title: "Image required",
-        description: "Please upload a reference image.",
-        variant: "destructive",
-      })
-      return
-    }
-
+  const executeGenerate = async () => {
     setIsGenerating(true)
     setGeneratedImage(null)
     setGeneratedText(null)
+    setShowGuestWarningDialog(false) // Close warning if open
 
     try {
       const response = await fetch("/api/generate", {
@@ -108,6 +121,13 @@ export function ImageEditor({ compact = false }: { compact?: boolean }) {
 
       if (!response.ok) {
         throw new Error(data.error || "Failed to generate image")
+      }
+
+      // Increment guest usage on success
+      if (!user) {
+        const newCount = guestCount + 1
+        localStorage.setItem("guest_usage_count", newCount.toString())
+        setGuestCount(newCount)
       }
 
       // 1. Check for direct imageUrl from our new backend logic
@@ -171,8 +191,48 @@ export function ImageEditor({ compact = false }: { compact?: boolean }) {
     }
   }
 
+  const handleGenerate = async () => {
+    if (!prompt.trim()) {
+      toast({
+        title: "Prompt required",
+        description: "Please enter a prompt to generate an image.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (mode === "image-to-image" && uploadedImages.length === 0) {
+      toast({
+        title: "Image required",
+        description: "Please upload a reference image.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    // Guest check
+    if (!user) {
+      if (guestCount >= 2) {
+        setShowGuestLimitDialog(true)
+        return
+      }
+      // Show warning before generating
+      setShowGuestWarningDialog(true)
+      return
+    }
+
+    // Logged in user
+    executeGenerate()
+  }
+
   return (
     <section id="editor" className={compact ? "" : "py-20 bg-muted/30 scroll-mt-24"}>
+      <GuestLimitDialog open={showGuestLimitDialog} onOpenChange={setShowGuestLimitDialog} />
+      <GuestWarningDialog 
+        open={showGuestWarningDialog} 
+        onOpenChange={setShowGuestWarningDialog}
+        onContinue={executeGenerate}
+      />
       <div className={compact ? "" : "container mx-auto px-4"}>
         {!compact && (
           <div className="text-center mb-12">
