@@ -86,10 +86,18 @@ This project uses `npm` (or `pnpm`/`yarn`) for dependency management and script 
 
 ## Key Features (Current Implementation)
 
+*   **Real AI Image Generation:**
+    *   **Text-to-Image:** Powered by OpenRouter (`google/gemini-2.5-flash-image-preview`).
+    *   **Image-to-Image:** Analysis and transformation using `google/gemini-2.5-flash-image`.
+    *   **Parsing Logic:** Advanced extraction of images from markdown responses or direct API image fields.
 *   **Image Editor Interface:**
-    *   Drag-and-drop file upload.
-    *   Prompt input area.
-    *   Model selection (Nano Banana, SeeDream, etc.).
-    *   Simulated image generation (currently uses a timeout and placeholder image).
+    *   Drag-and-drop file upload (supports up to 9 images).
+    *   Interactive prompt input with mode switching.
+    *   Real-time generation state with loading animations.
+*   **Authentication & Usage Limits:**
+    *   **Supabase Auth:** Google Sign-in integration for persisted history and higher limits.
+    *   **Guest Mode:** Limits unauthenticated users to 2 generations (tracked via `localStorage`).
+    *   **Warning Dialogs:** Informative UI for guest limits and login prompts.
 *   **Landing Page:**
     *   Responsive sections for features, showcase, reviews, and FAQ.
+    *   Tailwind CSS v4 styling with dark mode support.
