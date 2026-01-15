@@ -10,11 +10,55 @@ import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { User } from "@supabase/supabase-js"
 
+const PLANS = [
+  {
+    name: "Trial Plan",
+    price: "$1",
+    description: "Perfect for a quick test",
+    credits: 60,
+    images: 30,
+    popular: false,
+    buttonText: "Get Trial Now",
+  },
+  {
+    name: "Starter Plan",
+    price: "$9.99",
+    description: "Ideal for light users",
+    credits: 450,
+    images: 225,
+    popular: false,
+    buttonText: "Get Starter Now",
+  },
+  {
+    name: "Pro Plan",
+    price: "$49.99",
+    description: "Our most popular choice",
+    credits: 2400,
+    images: 1200,
+    popular: true,
+    badgeText: "Most Popular",
+    buttonText: "Get Pro Now",
+  },
+  {
+    name: "Ultra Plan",
+    price: "$129.99",
+    description: "For professional creators",
+    credits: 6500,
+    images: 3250,
+    popular: false,
+    buttonText: "Get Ultra Now",
+  },
+]
+
+import { useToast } from "@/hooks/use-toast"
+
 export function Pricing() {
   const supabase = createClient()
   const router = useRouter()
+  const { toast } = useToast()
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+  const [processingPlan, setProcessingPlan] = useState<string | null>(null)
 
   useEffect(() => {
     const getUser = async () => {
@@ -31,7 +75,7 @@ export function Pricing() {
     return () => subscription.unsubscribe()
   }, [supabase.auth])
 
-  const handleAction = async () => {
+  const handleAction = async (planName: string) => {
     if (loading) return
 
     if (!user) {
@@ -42,9 +86,40 @@ export function Pricing() {
           redirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
         },
       })
-    } else {
-      // User is logged in, redirect to dashboard
+      return
+    }
+
+    // Process mock payment
+    setProcessingPlan(planName)
+    try {
+      const res = await fetch('/api/payment/mock', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ planName }),
+      })
+
+      if (!res.ok) throw new Error('Payment failed')
+
+      const data = await res.json()
+      
+      toast({
+        title: "Purchase Successful!",
+        description: `You have added ${data.message ? data.message.replace('Successfully added ', '') : 'credits'} to your account.`,
+        variant: "default", // or "success" if you have it
+      })
+
+      // Dispatch event to update credits in navbar/sidebar
+      window.dispatchEvent(new Event("credits-updated"))
+      
       router.push("/dashboard")
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Something went wrong with the purchase.",
+        variant: "destructive",
+      })
+    } finally {
+      setProcessingPlan(null)
     }
   }
 
@@ -62,144 +137,79 @@ export function Pricing() {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-          <Card className="border-yellow-400/50 shadow-xl relative overflow-hidden flex flex-col">
-            <div className="absolute top-0 right-0 p-4">
-              <Badge className="bg-yellow-400 text-yellow-950 hover:bg-yellow-500">Popular</Badge>
-            </div>
-            
-            <CardHeader className="text-center pb-2">
-              <CardTitle className="text-2xl font-bold">Starter Plan</CardTitle>
-              <CardDescription>Perfect for trying out Nano Banana</CardDescription>
-            </CardHeader>
-
-            <CardContent className="text-center pb-8 flex-1">
-              <div className="flex items-center justify-center gap-1 mb-6">
-                <span className="text-4xl font-bold">$3.99</span>
-                <span className="text-muted-foreground">/ one-time</span>
-              </div>
-
-              <ul className="space-y-3 text-left max-w-[280px] mx-auto">
-                <li className="flex items-center gap-3">
-                  <div className="h-6 w-6 rounded-full bg-yellow-100 flex items-center justify-center shrink-0">
-                    <Check className="h-3.5 w-3.5 text-yellow-700" />
-                  </div>
-                  <span className="text-sm">200 Credits included</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <div className="h-6 w-6 rounded-full bg-yellow-100 flex items-center justify-center shrink-0">
-                    <Check className="h-3.5 w-3.5 text-yellow-700" />
-                  </div>
-                  <span className="text-sm">Approx. 100 Images (Nano Banana Standard)</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <div className="h-6 w-6 rounded-full bg-yellow-100 flex items-center justify-center shrink-0">
-                    <Zap className="h-3.5 w-3.5 text-yellow-700" />
-                  </div>
-                  <span className="text-sm">Fast GPU Generation</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <div className="h-6 w-6 rounded-full bg-yellow-100 flex items-center justify-center shrink-0">
-                    <Check className="h-3.5 w-3.5 text-yellow-700" />
-                  </div>
-                  <span className="text-sm">Commercial License</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <div className="h-6 w-6 rounded-full bg-yellow-100 flex items-center justify-center shrink-0">
-                    <Check className="h-3.5 w-3.5 text-yellow-700" />
-                  </div>
-                  <span className="text-sm">No monthly subscription (Pay-as-you-go)</span>
-                </li>
-              </ul>
-            </CardContent>
-
-            <CardFooter className="flex flex-col gap-4 mt-auto">
-              <Button 
-                className="w-full bg-yellow-400 text-yellow-950 hover:bg-yellow-500 font-semibold" 
-                size="lg"
-                onClick={handleAction}
-                disabled={loading}
-              >
-                Get Starter Now
-              </Button>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 max-w-7xl mx-auto">
+          {PLANS.map((plan) => (
+            <Card key={plan.name} className={`border-yellow-400/50 shadow-xl relative overflow-hidden flex flex-col ${plan.popular ? 'ring-2 ring-yellow-400 scale-105 z-10' : 'scale-95'}`}>
+              {plan.popular && (
+                <div className="absolute top-0 right-0 p-3">
+                  <Badge className="bg-yellow-400 text-yellow-950 hover:bg-yellow-500 text-[10px] px-2 py-0">Most Popular</Badge>
+                </div>
+              )}
               
-              <div className="space-y-2 text-center">
-                <p className="text-xs text-muted-foreground">
-                  Refund Policy: Refunds available within 7 days for unused credits only. See <Link href="/terms-of-service" className="underline hover:text-foreground">Terms of Service</Link> for details.
-                </p>
-                <p className="text-xs text-muted-foreground/60">
-                  AI Disclaimer: Service powered by third-party AI models.
-                </p>
-              </div>
-            </CardFooter>
-          </Card>
+              <CardHeader className="text-center pb-2 pt-6">
+                <CardTitle className="text-xl font-bold">{plan.name}</CardTitle>
+                <CardDescription className="text-xs">{plan.description}</CardDescription>
+              </CardHeader>
 
-          <Card className="border-yellow-400/50 shadow-xl relative overflow-hidden flex flex-col">
-            <CardHeader className="text-center pb-2">
-              <CardTitle className="text-2xl font-bold">Pro Plan</CardTitle>
-              <CardDescription>More credits for serious creators</CardDescription>
-            </CardHeader>
+              <CardContent className="text-center pb-6 flex-1 px-4">
+                <div className="flex items-center justify-center gap-1 mb-4">
+                  <span className="text-2xl font-bold">{plan.price}</span>
+                  <span className="text-muted-foreground text-[10px]">/ one-time</span>
+                </div>
 
-            <CardContent className="text-center pb-8 flex-1">
-              <div className="flex items-center justify-center gap-1 mb-6">
-                <span className="text-4xl font-bold">$19.99</span>
-                <span className="text-muted-foreground">/ one-time</span>
-              </div>
+                <ul className="space-y-2 text-left mx-auto">
+                  <li className="flex items-center gap-2">
+                    <div className="h-5 w-5 rounded-full bg-yellow-100 flex items-center justify-center shrink-0">
+                      <Check className="h-3 w-3 text-yellow-700" />
+                    </div>
+                    <span className="text-xs">{plan.credits} Credits included</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="h-5 w-5 rounded-full bg-yellow-100 flex items-center justify-center shrink-0">
+                      <Check className="h-3 w-3 text-yellow-700" />
+                    </div>
+                    <span className="text-xs">Approx. {plan.images} images</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="h-5 w-5 rounded-full bg-yellow-100 flex items-center justify-center shrink-0">
+                      <Zap className="h-3 w-3 text-yellow-700" />
+                    </div>
+                    <span className="text-xs">Fast GPU Generation</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="h-5 w-5 rounded-full bg-yellow-100 flex items-center justify-center shrink-0">
+                      <Check className="h-3 w-3 text-yellow-700" />
+                    </div>
+                    <span className="text-xs">Commercial License</span>
+                  </li>
+                </ul>
+              </CardContent>
 
-              <ul className="space-y-3 text-left max-w-[280px] mx-auto">
-                <li className="flex items-center gap-3">
-                  <div className="h-6 w-6 rounded-full bg-yellow-100 flex items-center justify-center shrink-0">
-                    <Check className="h-3.5 w-3.5 text-yellow-700" />
-                  </div>
-                  <span className="text-sm">800 Credits included</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <div className="h-6 w-6 rounded-full bg-yellow-100 flex items-center justify-center shrink-0">
-                    <Check className="h-3.5 w-3.5 text-yellow-700" />
-                  </div>
-                  <span className="text-sm">Approx. 400 Images (Nano Banana Standard)</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <div className="h-6 w-6 rounded-full bg-yellow-100 flex items-center justify-center shrink-0">
-                    <Zap className="h-3.5 w-3.5 text-yellow-700" />
-                  </div>
-                  <span className="text-sm">Fast GPU Generation</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <div className="h-6 w-6 rounded-full bg-yellow-100 flex items-center justify-center shrink-0">
-                    <Check className="h-3.5 w-3.5 text-yellow-700" />
-                  </div>
-                  <span className="text-sm">Commercial License</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <div className="h-6 w-6 rounded-full bg-yellow-100 flex items-center justify-center shrink-0">
-                    <Check className="h-3.5 w-3.5 text-yellow-700" />
-                  </div>
-                  <span className="text-sm">No monthly subscription (Pay-as-you-go)</span>
-                </li>
-              </ul>
-            </CardContent>
-
-            <CardFooter className="flex flex-col gap-4 mt-auto">
-              <Button 
-                className="w-full bg-yellow-400 text-yellow-950 hover:bg-yellow-500 font-semibold" 
-                size="lg"
-                onClick={handleAction}
-                disabled={loading}
-              >
-                Get Pro Now
-              </Button>
-              
-              <div className="space-y-2 text-center">
-                <p className="text-xs text-muted-foreground">
-                  Refund Policy: Refunds available within 7 days for unused credits only. See <Link href="/terms-of-service" className="underline hover:text-foreground">Terms of Service</Link> for details.
-                </p>
-                <p className="text-xs text-muted-foreground/60">
-                  AI Disclaimer: Service powered by third-party AI models.
-                </p>
-              </div>
-            </CardFooter>
-          </Card>
+              <CardFooter className="flex flex-col gap-4 mt-auto">
+                <Button 
+                  className="w-full bg-yellow-400 text-yellow-950 hover:bg-yellow-500 font-semibold" 
+                  size="lg"
+                  onClick={() => handleAction(plan.name)}
+                  disabled={loading || processingPlan !== null}
+                >
+                  {processingPlan === plan.name ? (
+                    <>
+                      <Zap className="mr-2 h-4 w-4 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    plan.buttonText
+                  )}
+                </Button>
+                
+                <div className="space-y-2 text-center">
+                  <p className="text-[10px] text-muted-foreground leading-tight">
+                    7-day refund for unused credits. <Link href="/terms-of-service" className="underline hover:text-foreground">Terms</Link> apply.
+                  </p>
+                </div>
+              </CardFooter>
+            </Card>
+          ))}
         </div>
       </div>
     </section>
