@@ -31,7 +31,7 @@ export function Pricing() {
     return () => subscription.unsubscribe()
   }, [supabase.auth])
 
-  const handleAction = async () => {
+  const handleCheckout = async (planId: "STARTER" | "PRO") => {
     if (loading) return
 
     if (!user) {
@@ -43,8 +43,26 @@ export function Pricing() {
         },
       })
     } else {
-      // User is logged in, redirect to dashboard
-      router.push("/dashboard")
+      try {
+        const response = await fetch("/api/payment/create-checkout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ planId }),
+        })
+
+        if (!response.ok) {
+          const errorText = await response.text()
+          throw new Error(errorText || "Failed to start checkout")
+        }
+
+        const { url } = await response.json()
+        if (url) {
+          window.location.href = url
+        }
+      } catch (error) {
+        console.error("Checkout error:", error)
+        alert("Failed to start checkout. Please try again.")
+      }
     }
   }
 
@@ -117,7 +135,7 @@ export function Pricing() {
               <Button 
                 className="w-full bg-yellow-400 text-yellow-950 hover:bg-yellow-500 font-semibold" 
                 size="lg"
-                onClick={handleAction}
+                onClick={() => handleCheckout("STARTER")}
                 disabled={loading}
               >
                 Get Starter Now
@@ -184,7 +202,7 @@ export function Pricing() {
               <Button 
                 className="w-full bg-yellow-400 text-yellow-950 hover:bg-yellow-500 font-semibold" 
                 size="lg"
-                onClick={handleAction}
+                onClick={() => handleCheckout("PRO")}
                 disabled={loading}
               >
                 Get Pro Now
