@@ -4,6 +4,7 @@ import type React from "react"
 
 import { useState, useCallback, useEffect } from "react"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
@@ -32,6 +33,19 @@ export function ImageEditor({ compact = false }: { compact?: boolean }) {
   const [showGuestLimitDialog, setShowGuestLimitDialog] = useState(false)
   const [showGuestWarningDialog, setShowGuestWarningDialog] = useState(false)
   const [guestCount, setGuestCount] = useState(0)
+  const [credits, setCredits] = useState<number | null>(null)
+
+  const fetchCredits = useCallback(async () => {
+    try {
+      const res = await fetch("/api/user/credits")
+      if (res.ok) {
+        const data = await res.json()
+        setCredits(data.credits)
+      }
+    } catch (error) {
+      console.error("Failed to fetch credits", error)
+    }
+  }, [])
 
   useEffect(() => {
     const supabase = createClient()
@@ -54,6 +68,14 @@ export function ImageEditor({ compact = false }: { compact?: boolean }) {
       subscription.unsubscribe()
     }
   }, [])
+
+  useEffect(() => {
+    if (user) {
+      fetchCredits()
+    } else {
+      setCredits(null)
+    }
+  }, [user, fetchCredits])
 
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault()
@@ -128,6 +150,10 @@ export function ImageEditor({ compact = false }: { compact?: boolean }) {
         const newCount = guestCount + 1
         localStorage.setItem("guest_usage_count", newCount.toString())
         setGuestCount(newCount)
+      } else {
+        fetchCredits()
+        // Notify other components (like the dashboard header) that credits have changed
+        window.dispatchEvent(new Event("credits-updated"))
       }
 
       // 1. Check for direct imageUrl from our new backend logic
@@ -221,6 +247,15 @@ export function ImageEditor({ compact = false }: { compact?: boolean }) {
       return
     }
 
+    if (credits !== null && credits < 2) {
+      toast({
+        title: "Insufficient credits",
+        description: "You need at least 2 credits to generate an image.",
+        variant: "destructive",
+      })
+      return
+    }
+
     // Logged in user
     executeGenerate()
   }
@@ -249,9 +284,16 @@ export function ImageEditor({ compact = false }: { compact?: boolean }) {
           {/* Prompt Engine Card */}
           <Card className="border-border/50 shadow-lg">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Sparkles className="h-5 w-5 text-yellow-500" />
-                Prompt Engine
+              <CardTitle className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-5 w-5 text-yellow-500" />
+                  Prompt Engine
+                </div>
+                {credits !== null && (
+                  <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200 ml-auto">
+                    {credits} Credits
+                  </Badge>
+                )}
               </CardTitle>
               <CardDescription>Transform your image with AI-powered editing</CardDescription>
             </CardHeader>
@@ -362,7 +404,7 @@ export function ImageEditor({ compact = false }: { compact?: boolean }) {
                 ) : (
                   <>
                     <Sparkles className="h-5 w-5" />
-                    Generate Now
+                    Generate Now {user && <span className="text-xs opacity-80 ml-1">(2 Credits)</span>}
                   </>
                 )}
               </Button>

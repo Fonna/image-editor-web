@@ -16,6 +16,12 @@ export function Hero() {
           BananaImage
         </h1>
 
+        <div className="flex items-center justify-center mb-6">
+           <Badge className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-4 py-1 text-base animate-pulse">
+             ✨ New user gets 10 credits!
+           </Badge>
+        </div>
+
         <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto mb-10 text-pretty">
           Transform any image with simple text prompts. Nano-banana's advanced model delivers consistent character
           editing and scene preservation that surpasses Flux Kontext. Experience the future of AI image editing.

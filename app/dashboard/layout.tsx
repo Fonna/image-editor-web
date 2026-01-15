@@ -2,9 +2,9 @@ import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/s
 import { AppSidebar } from "@/components/dashboard/app-sidebar"
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
-import { Coins } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
+import { DashboardCredits } from "@/components/dashboard/dashboard-credits"
 
 export default async function DashboardLayout({
   children,
@@ -28,10 +28,7 @@ export default async function DashboardLayout({
           </div>
           <div className="flex items-center gap-4">
              {/* Credit Balance Display */}
-            <div className="flex items-center gap-2 px-3 py-1 bg-muted/50 rounded-full border">
-              <Coins className="h-4 w-4 text-yellow-500" />
-              <span className="text-sm font-medium">200 Credits</span>
-            </div>
+            <DashboardCredits />
             <Button size="sm" variant="outline" className="h-8 text-xs bg-yellow-400/10 text-yellow-700 hover:bg-yellow-400/20 border-yellow-200" asChild>
                 <Link href="/#pricing">Buy More</Link>
             </Button>

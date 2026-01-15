@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import OpenAI from "openai";
 import { OpenRouter } from "@openrouter/sdk";
+import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 const openai = new OpenAI({
   baseURL: "https://openrouter.ai/api/v1",
@@ -17,11 +19,59 @@ const openRouter = new OpenRouter({
 
 export async function POST(req: Request) {
   try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    // Credit Check for Logged-in Users
+    let currentCredits = 0;
+    const adminSupabase = createAdminClient();
+
+    if (user) {
+      const { data: creditData } = await adminSupabase
+        .from('user_credits')
+        .select('credits')
+        .eq('user_id', user.id)
+        .single();
+
+      // Lazy initialization if record doesn't exist
+      if (!creditData) {
+        const { data: newCredit } = await adminSupabase
+          .from('user_credits')
+          .insert([{ user_id: user.id, credits: 10 }])
+          .select('credits')
+          .single();
+        currentCredits = newCredit ? newCredit.credits : 10;
+      } else {
+        currentCredits = creditData.credits;
+      }
+
+      if (currentCredits < 2) {
+        return NextResponse.json(
+          { error: "Insufficient credits. You need 2 credits to generate." }, 
+          { status: 403 }
+        );
+      }
+    }
+
     const { image, prompt, mode } = await req.json();
 
     if (!prompt) {
       return NextResponse.json({ error: "No prompt provided" }, { status: 400 });
     }
+
+    const deductCredits = async () => {
+      if (user) {
+        // Deduct 2 credits
+        const { error } = await adminSupabase
+          .from('user_credits')
+          .update({ credits: currentCredits - 2 })
+          .eq('user_id', user.id);
+        
+        if (error) {
+          console.error("Failed to deduct credits:", error);
+        }
+      }
+    };
 
     // Text to Image Mode
     if (mode === "text-to-image") {
@@ -42,7 +92,6 @@ export async function POST(req: Request) {
               content: prompt,
             },
           ],
-          // modalities: ["image", "text"], // Removed standard modality if not strictly required by raw API or try without it first
         })
       });
 
@@ -62,20 +111,17 @@ export async function POST(req: Request) {
       let extractedImageUrl = null;
 
       if (message) {
-         // Check standard 'images' array often used by OpenRouter for some models
          if (result.choices[0].images && Array.isArray(result.choices[0].images)) {
              extractedImageUrl = result.choices[0].images[0];
          }
-         // Check inside message (Gemini specific sometimes)
          else if (message.images && Array.isArray(message.images)) {
              const img = message.images[0];
              extractedImageUrl = img.url || img.imageUrl?.url || img.image_url?.url;
          }
-         // Check for content being a URL directly (rare but possible)
-         else if (typeof message.content === 'string' && message.content.startsWith('http')) {
-             // Basic check, might be text though
-         }
       }
+
+      // Deduct credits on success
+      await deductCredits();
 
       return NextResponse.json({ 
         full_response: result,
@@ -84,7 +130,7 @@ export async function POST(req: Request) {
       });
     }
 
-    // Image to Image Mode (Existing Logic)
+    // Image to Image Mode
     if (!image) {
       return NextResponse.json({ error: "No image provided" }, { status: 400 });
     }
@@ -111,6 +157,9 @@ export async function POST(req: Request) {
     });
 
     const result = completion.choices[0].message.content;
+
+    // Deduct credits on success
+    await deductCredits();
 
     return NextResponse.json({ result, full_response: completion });
   } catch (error) {
