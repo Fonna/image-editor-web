@@ -75,10 +75,14 @@ export async function POST(req: Request) {
           console.log(`Added ${creditsToAdd} credits to user ${userId}. New balance: ${newBalance}`);
 
           // Record transaction
-          // Try to extract amount and currency, defaulting if not found
-          const amount = eventObject.amount_total ? eventObject.amount_total / 100 : 0;
-          const currency = eventObject.currency ? eventObject.currency.toUpperCase() : 'USD';
-          const transactionId = eventObject.id || `txn_${Date.now()}`;
+          // Extract amount and currency from various possible locations
+          // Creem 'checkout.completed' usually has amount in eventObject.order.amount (in cents)
+          const order = eventObject.order || {};
+          const rawAmount = order.amount || eventObject.amount || eventObject.amount_total || 0;
+          const amount = rawAmount > 0 ? rawAmount / 100 : 0;
+          
+          const currency = (order.currency || eventObject.currency || 'USD').toUpperCase();
+          const transactionId = order.transaction || eventObject.id || `txn_${Date.now()}`;
 
           const { error: txnError } = await supabase
             .from('transactions')
