@@ -10,24 +10,61 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { useSearchParams } from "next/navigation"
-import { useEffect, Suspense } from "react"
+import { useEffect, Suspense, useState } from "react"
 import { useToast } from "@/hooks/use-toast"
+import { createClient } from "@/lib/supabase/client"
+import { Badge } from "@/components/ui/badge"
+
+interface Transaction {
+  id: string
+  created_at: string
+  plan_id: string
+  amount: number
+  currency: string
+  status: string
+  credits_added: number
+}
 
 function BillingContent() {
   const searchParams = useSearchParams()
   const { toast } = useToast()
+  const [transactions, setTransactions] = useState<Transaction[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    // Check for success param
     if (searchParams.get("success") === "true") {
       toast({
         title: "Payment Successful",
         description: "Thank you for your purchase! Your credits have been updated.",
       })
-      // Clean up URL
       const url = new URL(window.location.href)
       url.searchParams.delete("success")
       window.history.replaceState({}, "", url)
     }
+
+    // Fetch transactions
+    const fetchHistory = async () => {
+      try {
+        const supabase = createClient()
+        const { data, error } = await supabase
+          .from('transactions')
+          .select('*')
+          .order('created_at', { ascending: false })
+
+        if (error) {
+          console.error('Error fetching transactions:', error)
+        } else {
+          setTransactions(data || [])
+        }
+      } catch (err) {
+        console.error('Failed to fetch transactions', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchHistory()
   }, [searchParams, toast])
 
   return (
@@ -43,17 +80,47 @@ function BillingContent() {
             <TableHeader>
               <TableRow>
                 <TableHead>Date</TableHead>
-                <TableHead>Description</TableHead>
+                <TableHead>Plan</TableHead>
                 <TableHead>Amount</TableHead>
+                <TableHead>Credits</TableHead>
                 <TableHead className="text-right">Status</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              <TableRow>
-                <TableCell className="text-center py-8 text-muted-foreground" colSpan={4}>
-                  No recharge records found.
-                </TableCell>
-              </TableRow>
+              {loading ? (
+                <TableRow>
+                  <TableCell className="text-center py-8" colSpan={5}>
+                    Loading history...
+                  </TableCell>
+                </TableRow>
+              ) : transactions.length === 0 ? (
+                <TableRow>
+                  <TableCell className="text-center py-8 text-muted-foreground" colSpan={5}>
+                    No recharge records found.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                transactions.map((txn) => (
+                  <TableRow key={txn.id}>
+                    <TableCell>
+                      {new Date(txn.created_at).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell className="font-medium">{txn.plan_id}</TableCell>
+                    <TableCell>
+                      {new Intl.NumberFormat('en-US', {
+                        style: 'currency',
+                        currency: txn.currency || 'USD'
+                      }).format(txn.amount)}
+                    </TableCell>
+                    <TableCell>+{txn.credits_added}</TableCell>
+                    <TableCell className="text-right">
+                      <Badge variant={txn.status === 'completed' ? 'default' : 'secondary'}>
+                        {txn.status}
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </CardContent>

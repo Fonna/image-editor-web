@@ -73,6 +73,33 @@ export async function POST(req: Request) {
           }
 
           console.log(`Added ${creditsToAdd} credits to user ${userId}. New balance: ${newBalance}`);
+
+          // Record transaction
+          // Try to extract amount and currency, defaulting if not found
+          const amount = eventObject.amount_total ? eventObject.amount_total / 100 : 0;
+          const currency = eventObject.currency ? eventObject.currency.toUpperCase() : 'USD';
+          const transactionId = eventObject.id || `txn_${Date.now()}`;
+
+          const { error: txnError } = await supabase
+            .from('transactions')
+            .insert({
+              user_id: userId,
+              amount: amount,
+              currency: currency,
+              status: 'completed',
+              plan_id: planId,
+              credits_added: creditsToAdd,
+              provider_transaction_id: transactionId,
+              metadata: eventObject,
+              created_at: new Date().toISOString()
+            });
+
+          if (txnError) {
+            console.error("Error logging transaction:", txnError);
+            // We don't fail the webhook here because credits were already added
+          } else {
+            console.log(`Transaction logged for user ${userId}`);
+          }
         }
       }
     }
