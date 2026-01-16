@@ -10,12 +10,16 @@ export async function POST(req: Request) {
     // const signature = req.headers.get("x-creem-signature");
     // if (!verifySignature(signature, body, process.env.CREEM_WEBHOOK_SECRET)) ...
 
-    const eventType = body.type;
-    const data = body.data;
+    const eventType = body.eventType || body.type;
+    const eventObject = body.object || body.data?.object || body.data;
+
+    console.log(`Processing event: ${eventType}`);
 
     if (eventType === "checkout.completed" || eventType === "order.paid") {
-      const metadata = data?.metadata || data?.object?.metadata;
+      const metadata = eventObject?.metadata;
       
+      console.log("Metadata found:", metadata);
+
       if (metadata?.userId && metadata?.planId) {
         const userId = metadata.userId;
         const planId = metadata.planId;
