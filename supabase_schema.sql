@@ -12,7 +12,7 @@ alter table user_credits enable row level security;
 -- Create policies
 -- Allow users to view their own credits
 create policy "Users can view their own credits" on user_credits
-  for select using (auth.uid() = user_id);
+  for select using ((select auth.uid()) = user_id);
 
 -- Only service role can insert/update/delete (implicitly denied for others by default RLS)
 -- Note: We will use the service role key in the backend to manage credits.

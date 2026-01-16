@@ -18,6 +18,6 @@ alter table transactions enable row level security;
 -- Create policies
 -- Allow users to view their own transactions
 create policy "Users can view their own transactions" on transactions
-  for select using (auth.uid() = user_id);
+  for select using ((select auth.uid()) = user_id);
 
 -- Service role can do everything (implicitly allowed if no policy blocks it, but we rely on RLS bypass in admin client)
