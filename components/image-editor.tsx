@@ -28,7 +28,7 @@ export function ImageEditor({ compact = false }: { compact?: boolean }) {
   const [dragActive, setDragActive] = useState(false)
   const [mode, setMode] = useState("image-to-image")
   const { toast } = useToast()
-  
+
   const [user, setUser] = useState<any>(null)
   const [showGuestLimitDialog, setShowGuestLimitDialog] = useState(false)
   const [showGuestWarningDialog, setShowGuestWarningDialog] = useState(false)
@@ -49,7 +49,7 @@ export function ImageEditor({ compact = false }: { compact?: boolean }) {
 
   useEffect(() => {
     const supabase = createClient()
-    
+
     // Check current session
     supabase.auth.getUser().then(({ data }) => {
       setUser(data.user)
@@ -136,6 +136,7 @@ export function ImageEditor({ compact = false }: { compact?: boolean }) {
           image: mode === "image-to-image" ? uploadedImages[0] : undefined,
           prompt: prompt,
           mode: mode,
+          model: model,
         }),
       })
 
@@ -168,15 +169,15 @@ export function ImageEditor({ compact = false }: { compact?: boolean }) {
         const message = data.full_response.choices?.[0]?.message;
         // Check for 'images' field (supporting both camelCase and snake_case inside)
         if (message?.images && Array.isArray(message.images) && message.images.length > 0) {
-           const imgObj = message.images[0];
-           const url = imgObj.imageUrl?.url || imgObj.image_url?.url;
-           if (url) {
-             setGeneratedImage(url);
-             if (message.content) {
-               setGeneratedText(message.content);
-             }
-             return;
-           }
+          const imgObj = message.images[0];
+          const url = imgObj.imageUrl?.url || imgObj.image_url?.url;
+          if (url) {
+            setGeneratedImage(url);
+            if (message.content) {
+              setGeneratedText(message.content);
+            }
+            return;
+          }
         }
       }
 
@@ -184,25 +185,25 @@ export function ImageEditor({ compact = false }: { compact?: boolean }) {
         // Parse for markdown image URL: ![alt](url)
         const markdownImageRegex = /!\[.*?\]\((.*?)\)/
         const urlRegex = /(https?:\/\/[^\s]+)/
-        
+
         const markdownMatch = data.result.match(markdownImageRegex)
         const urlMatch = data.result.match(urlRegex)
-        
+
         const imageUrl = markdownMatch ? markdownMatch[1] : (urlMatch ? urlMatch[0] : null)
 
         if (imageUrl) {
-           setGeneratedImage(imageUrl)
-           // If there is also text accompanying the image, we could optionally show it too, 
-           // but the primary goal is to show the image.
-           if (data.result !== imageUrl) {
-             setGeneratedText(data.result.replace(markdownImageRegex, '').trim())
-           }
+          setGeneratedImage(imageUrl)
+          // If there is also text accompanying the image, we could optionally show it too, 
+          // but the primary goal is to show the image.
+          if (data.result !== imageUrl) {
+            setGeneratedText(data.result.replace(markdownImageRegex, '').trim())
+          }
         } else {
-           setGeneratedText(data.result)
-           toast({
-             title: "Analysis Complete",
-             description: "The model has processed your image.",
-           })
+          setGeneratedText(data.result)
+          toast({
+            title: "Analysis Complete",
+            description: "The model has processed your image.",
+          })
         }
       }
     } catch (error) {
@@ -263,8 +264,8 @@ export function ImageEditor({ compact = false }: { compact?: boolean }) {
   return (
     <section id="editor" className={compact ? "" : "py-20 bg-muted/30 scroll-mt-24"}>
       <GuestLimitDialog open={showGuestLimitDialog} onOpenChange={setShowGuestLimitDialog} />
-      <GuestWarningDialog 
-        open={showGuestWarningDialog} 
+      <GuestWarningDialog
+        open={showGuestWarningDialog}
         onOpenChange={setShowGuestWarningDialog}
         onContinue={executeGenerate}
       />
@@ -315,6 +316,7 @@ export function ImageEditor({ compact = false }: { compact?: boolean }) {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="nano-banana">🍌 Nano Banana</SelectItem>
+                    <SelectItem value="doubao-seedream-4.5">🌋 Doubao Seedream 4.5</SelectItem>
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground">
@@ -352,11 +354,10 @@ export function ImageEditor({ compact = false }: { compact?: boolean }) {
 
                     {uploadedImages.length < 9 && (
                       <label
-                        className={`aspect-square rounded-lg border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-colors ${
-                          dragActive
+                        className={`aspect-square rounded-lg border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-colors ${dragActive
                             ? "border-yellow-400 bg-yellow-50"
                             : "border-border hover:border-yellow-400/50 hover:bg-muted/50"
-                        }`}
+                          }`}
                         onDragEnter={handleDrag}
                         onDragLeave={handleDrag}
                         onDragOver={handleDrag}
@@ -445,7 +446,7 @@ export function ImageEditor({ compact = false }: { compact?: boolean }) {
                   </>
                 )}
               </div>
-              
+
               <div className="mt-6 p-4 rounded-lg bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200/50">
                 <p className="text-sm text-yellow-800 mb-2">Want more powerful image generation features?</p>
                 <Button variant="link" className="p-0 h-auto text-yellow-700 gap-1">

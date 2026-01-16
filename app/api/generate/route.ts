@@ -21,7 +21,7 @@ export async function POST(req: Request) {
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
-    
+
     // Credit Check for Logged-in Users
     let currentCredits = 0;
     const adminSupabase = createAdminClient();
@@ -47,13 +47,13 @@ export async function POST(req: Request) {
 
       if (currentCredits < 2) {
         return NextResponse.json(
-          { error: "Insufficient credits. You need 2 credits to generate." }, 
+          { error: "Insufficient credits. You need 2 credits to generate." },
           { status: 403 }
         );
       }
     }
 
-    const { image, prompt, mode } = await req.json();
+    const { image, prompt, mode, model } = await req.json();
 
     if (!prompt) {
       return NextResponse.json({ error: "No prompt provided" }, { status: 400 });
@@ -66,12 +66,54 @@ export async function POST(req: Request) {
           .from('user_credits')
           .update({ credits: currentCredits - 2 })
           .eq('user_id', user.id);
-        
+
         if (error) {
           console.error("Failed to deduct credits:", error);
         }
       }
     };
+
+    // Volcengine Doubao Model
+    if (model === "doubao-seedream-4.5") {
+      console.log("Sending request to Volcengine API...");
+
+      const response = await fetch("https://ark.cn-beijing.volces.com/api/v3/images/generations", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${process.env.ARK_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: "doubao-seedream-4-5-251128",
+          prompt: prompt,
+          size: "2K", // Default to 2K as per example
+          watermark: false
+        })
+      });
+
+      const result = await response.json();
+      console.log("Volcengine Response:", JSON.stringify(result, null, 2));
+
+      if (result.error) {
+        return NextResponse.json({ error: result.error.message || "Volcengine API Error" }, { status: 500 });
+      }
+
+      // Extract image URL
+      // The response structure is likely similar to OpenAI/standard image generation APIs
+      // Based on typical Volcengine/OpenAI compat: data[0].url
+      const imageUrl = result.data?.[0]?.url;
+
+      if (!imageUrl) {
+        return NextResponse.json({ error: "No image URL in response" }, { status: 500 });
+      }
+
+      await deductCredits();
+
+      return NextResponse.json({
+        imageUrl: imageUrl,
+        result: prompt // Returning prompt as text result for consistency
+      });
+    }
 
     // Text to Image Mode
     if (mode === "text-to-image") {
@@ -111,22 +153,22 @@ export async function POST(req: Request) {
       let extractedImageUrl = null;
 
       if (message) {
-         if (result.choices[0].images && Array.isArray(result.choices[0].images)) {
-             extractedImageUrl = result.choices[0].images[0];
-         }
-         else if (message.images && Array.isArray(message.images)) {
-             const img = message.images[0];
-             extractedImageUrl = img.url || img.imageUrl?.url || img.image_url?.url;
-         }
+        if (result.choices[0].images && Array.isArray(result.choices[0].images)) {
+          extractedImageUrl = result.choices[0].images[0];
+        }
+        else if (message.images && Array.isArray(message.images)) {
+          const img = message.images[0];
+          extractedImageUrl = img.url || img.imageUrl?.url || img.image_url?.url;
+        }
       }
 
       // Deduct credits on success
       await deductCredits();
 
-      return NextResponse.json({ 
+      return NextResponse.json({
         full_response: result,
         imageUrl: extractedImageUrl,
-        result: message?.content 
+        result: message?.content
       });
     }
 
