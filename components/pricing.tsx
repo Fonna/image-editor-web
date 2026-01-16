@@ -31,7 +31,7 @@ export function Pricing() {
     return () => subscription.unsubscribe()
   }, [supabase.auth])
 
-  const handleCheckout = async (planId: "STARTER" | "PRO") => {
+  const handleCheckout = async (planId: string) => {
     if (loading) return
 
     if (!user) {
@@ -66,6 +66,45 @@ export function Pricing() {
     }
   }
 
+  const plans = [
+    {
+      name: "Trial Plan",
+      description: "Test the waters",
+      price: "$1",
+      credits: "60 Credits included",
+      images: "Approx. 30 Images (Nano Banana Standard)",
+      planId: "TRIAL",
+      popular: false
+    },
+    {
+      name: "Starter Plan",
+      description: "Perfect for casual creators",
+      price: "$9.99",
+      credits: "450 Credits included",
+      images: "Approx. 225 Images (Nano Banana Standard)",
+      planId: "STARTER",
+      popular: false
+    },
+    {
+      name: "Pro Plan",
+      description: "For serious creators",
+      price: "$49.99",
+      credits: "2400 Credits included",
+      images: "Approx. 1200 Images (Nano Banana Standard)",
+      planId: "PRO",
+      popular: true
+    },
+    {
+      name: "Ultra Plan",
+      description: "Maximum creative power",
+      price: "$129.99",
+      credits: "6500 Credits included",
+      images: "Approx. 3250 Images (Nano Banana Standard)",
+      planId: "ULTRA",
+      popular: false
+    }
+  ]
+
   return (
     <section id="pricing" className="py-20 relative overflow-hidden">
       {/* Background decoration similar to hero but subtle */}
@@ -80,144 +119,89 @@ export function Pricing() {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-          <Card className="border-yellow-400/50 shadow-xl relative overflow-hidden flex flex-col">
-            <div className="absolute top-0 right-0 p-4">
-              <Badge className="bg-yellow-400 text-yellow-950 hover:bg-yellow-500">Popular</Badge>
-            </div>
-            
-            <CardHeader className="text-center pb-2">
-              <CardTitle className="text-2xl font-bold">Starter Plan</CardTitle>
-              <CardDescription>Perfect for trying out Nano Banana</CardDescription>
-            </CardHeader>
-
-            <CardContent className="text-center pb-8 flex-1">
-              <div className="flex items-center justify-center gap-1 mb-6">
-                <span className="text-4xl font-bold">$3.99</span>
-                <span className="text-muted-foreground">/ one-time</span>
-              </div>
-
-              <ul className="space-y-3 text-left max-w-[280px] mx-auto">
-                <li className="flex items-center gap-3">
-                  <div className="h-6 w-6 rounded-full bg-yellow-100 flex items-center justify-center shrink-0">
-                    <Check className="h-3.5 w-3.5 text-yellow-700" />
-                  </div>
-                  <span className="text-sm">200 Credits included</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <div className="h-6 w-6 rounded-full bg-yellow-100 flex items-center justify-center shrink-0">
-                    <Check className="h-3.5 w-3.5 text-yellow-700" />
-                  </div>
-                  <span className="text-sm">Approx. 100 Images (Nano Banana Standard)</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <div className="h-6 w-6 rounded-full bg-yellow-100 flex items-center justify-center shrink-0">
-                    <Zap className="h-3.5 w-3.5 text-yellow-700" />
-                  </div>
-                  <span className="text-sm">Fast GPU Generation</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <div className="h-6 w-6 rounded-full bg-yellow-100 flex items-center justify-center shrink-0">
-                    <Check className="h-3.5 w-3.5 text-yellow-700" />
-                  </div>
-                  <span className="text-sm">Commercial License</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <div className="h-6 w-6 rounded-full bg-yellow-100 flex items-center justify-center shrink-0">
-                    <Check className="h-3.5 w-3.5 text-yellow-700" />
-                  </div>
-                  <span className="text-sm">No monthly subscription (Pay-as-you-go)</span>
-                </li>
-              </ul>
-            </CardContent>
-
-            <CardFooter className="flex flex-col gap-4 mt-auto">
-              <Button 
-                className="w-full bg-yellow-400 text-yellow-950 hover:bg-yellow-500 font-semibold" 
-                size="lg"
-                onClick={() => handleCheckout("STARTER")}
-                disabled={loading}
-              >
-                Get Starter Now
-              </Button>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
+          {plans.map((plan) => (
+            <Card key={plan.planId} className={`border-yellow-400/50 shadow-xl relative overflow-hidden flex flex-col ${plan.popular ? 'scale-105 z-10 border-yellow-500 shadow-2xl' : ''}`}>
+              {plan.popular && (
+                <div className="absolute top-0 right-0 p-4">
+                  <Badge className="bg-yellow-400 text-yellow-950 hover:bg-yellow-500">Most Popular</Badge>
+                </div>
+              )}
               
-              <div className="space-y-2 text-center">
-                <p className="text-xs text-muted-foreground">
-                  Refund Policy: Refunds available within 7 days for unused credits only. See <Link href="/terms-of-service" className="underline hover:text-foreground">Terms of Service</Link> for details.
-                </p>
-                <p className="text-xs text-muted-foreground/60">
-                  AI Disclaimer: Service powered by third-party AI models.
-                </p>
-              </div>
-            </CardFooter>
-          </Card>
+              <CardHeader className="text-center pb-2">
+                <CardTitle className="text-xl font-bold">{plan.name}</CardTitle>
+                <CardDescription>{plan.description}</CardDescription>
+              </CardHeader>
 
-          <Card className="border-yellow-400/50 shadow-xl relative overflow-hidden flex flex-col">
-            <CardHeader className="text-center pb-2">
-              <CardTitle className="text-2xl font-bold">Pro Plan</CardTitle>
-              <CardDescription>More credits for serious creators</CardDescription>
-            </CardHeader>
+              <CardContent className="text-center pb-8 flex-1">
+                <div className="flex items-center justify-center gap-1 mb-6">
+                  <span className="text-3xl font-bold">{plan.price}</span>
+                  <span className="text-muted-foreground text-sm">/ one-time</span>
+                </div>
 
-            <CardContent className="text-center pb-8 flex-1">
-              <div className="flex items-center justify-center gap-1 mb-6">
-                <span className="text-4xl font-bold">$19.99</span>
-                <span className="text-muted-foreground">/ one-time</span>
-              </div>
+                <ul className="space-y-3 text-left text-sm mx-auto">
+                  <li className="flex items-center gap-3">
+                    <div className="h-5 w-5 rounded-full bg-yellow-100 flex items-center justify-center shrink-0">
+                      <Check className="h-3 w-3 text-yellow-700" />
+                    </div>
+                    <span>{plan.credits}</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <div className="h-5 w-5 rounded-full bg-yellow-100 flex items-center justify-center shrink-0">
+                      <Check className="h-3 w-3 text-yellow-700" />
+                    </div>
+                    <span>{plan.images}</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <div className="h-5 w-5 rounded-full bg-yellow-100 flex items-center justify-center shrink-0">
+                      <Zap className="h-3 w-3 text-yellow-700" />
+                    </div>
+                    <span>Fast GPU Generation</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <div className="h-5 w-5 rounded-full bg-yellow-100 flex items-center justify-center shrink-0">
+                      <Check className="h-3 w-3 text-yellow-700" />
+                    </div>
+                    <span>Commercial License</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <div className="h-5 w-5 rounded-full bg-yellow-100 flex items-center justify-center shrink-0">
+                      <Check className="h-3 w-3 text-yellow-700" />
+                    </div>
+                    <span>No monthly subscription</span>
+                  </li>
+                </ul>
+              </CardContent>
 
-              <ul className="space-y-3 text-left max-w-[280px] mx-auto">
-                <li className="flex items-center gap-3">
-                  <div className="h-6 w-6 rounded-full bg-yellow-100 flex items-center justify-center shrink-0">
-                    <Check className="h-3.5 w-3.5 text-yellow-700" />
+              <CardFooter className="flex flex-col gap-4 mt-auto">
+                <Button 
+                  className="w-full bg-yellow-400 text-yellow-950 hover:bg-yellow-500 font-semibold" 
+                  size="lg"
+                  onClick={() => handleCheckout(plan.planId)}
+                  disabled={loading}
+                >
+                  Get {plan.name.split(' ')[0]}
+                </Button>
+                
+                {plan.planId === "PRO" && (
+                   <div className="space-y-2 text-center">
+                    <p className="text-[10px] text-muted-foreground">
+                      Refund Policy: Refunds within 7 days.
+                    </p>
                   </div>
-                  <span className="text-sm">800 Credits included</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <div className="h-6 w-6 rounded-full bg-yellow-100 flex items-center justify-center shrink-0">
-                    <Check className="h-3.5 w-3.5 text-yellow-700" />
-                  </div>
-                  <span className="text-sm">Approx. 400 Images (Nano Banana Standard)</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <div className="h-6 w-6 rounded-full bg-yellow-100 flex items-center justify-center shrink-0">
-                    <Zap className="h-3.5 w-3.5 text-yellow-700" />
-                  </div>
-                  <span className="text-sm">Fast GPU Generation</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <div className="h-6 w-6 rounded-full bg-yellow-100 flex items-center justify-center shrink-0">
-                    <Check className="h-3.5 w-3.5 text-yellow-700" />
-                  </div>
-                  <span className="text-sm">Commercial License</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <div className="h-6 w-6 rounded-full bg-yellow-100 flex items-center justify-center shrink-0">
-                    <Check className="h-3.5 w-3.5 text-yellow-700" />
-                  </div>
-                  <span className="text-sm">No monthly subscription (Pay-as-you-go)</span>
-                </li>
-              </ul>
-            </CardContent>
-
-            <CardFooter className="flex flex-col gap-4 mt-auto">
-              <Button 
-                className="w-full bg-yellow-400 text-yellow-950 hover:bg-yellow-500 font-semibold" 
-                size="lg"
-                onClick={() => handleCheckout("PRO")}
-                disabled={loading}
-              >
-                Get Pro Now
-              </Button>
-              
-              <div className="space-y-2 text-center">
-                <p className="text-xs text-muted-foreground">
-                  Refund Policy: Refunds available within 7 days for unused credits only. See <Link href="/terms-of-service" className="underline hover:text-foreground">Terms of Service</Link> for details.
-                </p>
-                <p className="text-xs text-muted-foreground/60">
-                  AI Disclaimer: Service powered by third-party AI models.
-                </p>
-              </div>
-            </CardFooter>
-          </Card>
+                )}
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
+        
+        <div className="mt-12 text-center space-y-2">
+            <p className="text-xs text-muted-foreground">
+                Refund Policy: Refunds available within 7 days for unused credits only. See <Link href="/terms-of-service" className="underline hover:text-foreground">Terms of Service</Link> for details.
+            </p>
+            <p className="text-xs text-muted-foreground/60">
+                AI Disclaimer: Service powered by third-party AI models.
+            </p>
         </div>
       </div>
     </section>

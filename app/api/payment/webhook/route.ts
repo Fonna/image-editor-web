@@ -25,8 +25,20 @@ export async function POST(req: Request) {
         const planId = metadata.planId;
         
         let creditsToAdd = 0;
-        if (planId === "STARTER") creditsToAdd = 200;
-        else if (planId === "PRO") creditsToAdd = 800;
+        switch (planId) {
+          case "TRIAL":
+            creditsToAdd = 60;
+            break;
+          case "STARTER":
+            creditsToAdd = 450;
+            break;
+          case "PRO":
+            creditsToAdd = 2400;
+            break;
+          case "ULTRA":
+            creditsToAdd = 6500;
+            break;
+        }
 
         if (creditsToAdd > 0) {
           const supabase = createAdminClient();

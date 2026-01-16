@@ -13,13 +13,26 @@ export async function POST(req: Request) {
 
     const { planId } = await req.json();
 
-    if (!planId || !["STARTER", "PRO"].includes(planId)) {
+    const validPlans = ["TRIAL", "STARTER", "PRO", "ULTRA"];
+    if (!planId || !validPlans.includes(planId)) {
       return new NextResponse("Invalid plan ID", { status: 400 });
     }
 
-    const productId = planId === "STARTER" 
-      ? process.env.CREEM_PRODUCT_STARTER_ID 
-      : process.env.CREEM_PRODUCT_PRO_ID;
+    let productId;
+    switch (planId) {
+      case "TRIAL":
+        productId = process.env.CREEM_PRODUCT_TRIAL_ID;
+        break;
+      case "STARTER":
+        productId = process.env.CREEM_PRODUCT_STARTER_ID;
+        break;
+      case "PRO":
+        productId = process.env.CREEM_PRODUCT_PRO_ID;
+        break;
+      case "ULTRA":
+        productId = process.env.CREEM_PRODUCT_ULTRA_ID;
+        break;
+    }
 
     if (!productId) {
       console.error("Missing product ID for plan:", planId);
