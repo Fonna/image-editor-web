@@ -505,7 +505,18 @@ export function ImageEditor({ compact = false }: { compact?: boolean }) {
             </CardHeader>
             <CardContent>
               <div className="aspect-square rounded-lg bg-muted/50 border-2 border-dashed border-border flex flex-col items-center justify-center relative overflow-hidden">
-                {generatedImage ? (
+                {isGenerating ? (
+                  <div className="flex flex-col items-center justify-center animate-in fade-in zoom-in duration-300">
+                    <div className="relative">
+                      <div className="absolute inset-0 bg-yellow-400 blur-xl opacity-20 animate-pulse rounded-full"></div>
+                      <Loader2 className="h-12 w-12 text-yellow-500 animate-spin relative z-10" />
+                    </div>
+                    <h4 className="font-medium text-foreground mt-4 mb-1">Creating Magic...</h4>
+                    <p className="text-sm text-muted-foreground text-center max-w-xs animate-pulse">
+                      Please wait while the AI generates your image
+                    </p>
+                  </div>
+                ) : generatedImage ? (
                   <img
                     src={generatedImage || "/placeholder.svg"}
                     alt="Generated"
