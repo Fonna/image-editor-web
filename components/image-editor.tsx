@@ -504,7 +504,7 @@ export function ImageEditor({ compact = false }: { compact?: boolean }) {
               <CardDescription>Your ultra-fast AI creations appear here instantly</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="aspect-square rounded-lg bg-muted/50 border-2 border-dashed border-border flex flex-col items-center justify-center relative overflow-hidden">
+              <div className={`rounded-lg bg-muted/50 border-2 border-dashed border-border flex flex-col items-center justify-center relative overflow-hidden ${generatedImage ? "min-h-[300px]" : "aspect-square"}`}>
                 {isGenerating ? (
                   <div className="flex flex-col items-center justify-center animate-in fade-in zoom-in duration-300">
                     <div className="relative">
@@ -520,7 +520,7 @@ export function ImageEditor({ compact = false }: { compact?: boolean }) {
                   <img
                     src={generatedImage || "/placeholder.svg"}
                     alt="Generated"
-                    className="w-full h-full object-cover rounded-lg"
+                    className="w-full h-auto rounded-lg shadow-sm"
                   />
                 ) : generatedText ? (
                   <ScrollArea className="h-full w-full p-6 text-left">
