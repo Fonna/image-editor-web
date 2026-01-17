@@ -18,6 +18,58 @@ import { createClient } from "@/lib/supabase/client"
 import { GuestLimitDialog } from "@/components/guest-limit-dialog"
 import { GuestWarningDialog } from "@/components/guest-warning-dialog"
 
+// Image validation for Doubao Seedream 4.5
+const validateImageForDoubao = async (file: File): Promise<{ valid: boolean; error?: string }> => {
+  // Check file size (max 10MB)
+  const maxSize = 10 * 1024 * 1024
+  if (file.size > maxSize) {
+    return { valid: false, error: "图片大小不能超过 10MB" }
+  }
+
+  // Check file format
+  const allowedFormats = ['image/jpeg', 'image/png', 'image/webp', 'image/bmp', 'image/tiff', 'image/gif']
+  if (!allowedFormats.includes(file.type)) {
+    return { valid: false, error: "不支持的图片格式。请使用 JPEG, PNG, WEBP, BMP, TIFF 或 GIF 格式" }
+  }
+
+  // Check dimensions
+  return new Promise((resolve) => {
+    const img = new Image()
+    img.onload = () => {
+      const width = img.width
+      const height = img.height
+
+      // Check minimum dimensions
+      if (width <= 14 || height <= 14) {
+        resolve({ valid: false, error: `图片尺寸太小。宽度和高度必须大于 14px（当前: ${width}x${height}px）` })
+        return
+      }
+
+      // Check aspect ratio (1/16 to 16)
+      const aspectRatio = width / height
+      if (aspectRatio < 1 / 16 || aspectRatio > 16) {
+        resolve({ valid: false, error: `图片宽高比不符合要求。宽高比必须在 1:16 到 16:1 之间（当前: ${aspectRatio.toFixed(2)}）` })
+        return
+      }
+
+      // Check maximum pixels
+      const totalPixels = width * height
+      if (totalPixels > 36000000) {
+        resolve({ valid: false, error: `图片像素总数过大。最大支持 36,000,000 像素（当前: ${totalPixels.toLocaleString()}）` })
+        return
+      }
+
+      resolve({ valid: true })
+    }
+
+    img.onerror = () => {
+      resolve({ valid: false, error: "无法读取图片文件" })
+    }
+
+    img.src = URL.createObjectURL(file)
+  })
+}
+
 export function ImageEditor({ compact = false }: { compact?: boolean }) {
   const [uploadedImages, setUploadedImages] = useState<string[]>([])
   const [prompt, setPrompt] = useState("")
@@ -87,32 +139,62 @@ export function ImageEditor({ compact = false }: { compact?: boolean }) {
     }
   }, [])
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
+  const handleDrop = useCallback(async (e: React.DragEvent) => {
     e.preventDefault()
     e.stopPropagation()
     setDragActive(false)
 
     const files = Array.from(e.dataTransfer.files)
-    handleFiles(files)
-  }, [])
+    await handleFiles(files)
+  }, [model, toast])
 
-  const handleFiles = (files: File[]) => {
-    files.forEach((file) => {
-      if (file.type.startsWith("image/") && file.size <= 10 * 1024 * 1024) {
-        const reader = new FileReader()
-        reader.onload = (e) => {
-          if (e.target?.result && uploadedImages.length < 9) {
-            setUploadedImages((prev) => [...prev, e.target!.result as string])
-          }
-        }
-        reader.readAsDataURL(file)
+  const handleFiles = async (files: File[]) => {
+    for (const file of files) {
+      if (!file.type.startsWith("image/")) {
+        toast({
+          title: "文件类型错误",
+          description: "请上传图片文件",
+          variant: "destructive",
+        })
+        continue
       }
-    })
+
+      // Validate for Doubao model if selected
+      if (model === "doubao-seedream-4.5") {
+        const validation = await validateImageForDoubao(file)
+        if (!validation.valid) {
+          toast({
+            title: "图片不符合要求",
+            description: validation.error,
+            variant: "destructive",
+          })
+          continue
+        }
+      } else {
+        // Original validation for other models
+        if (file.size > 10 * 1024 * 1024) {
+          toast({
+            title: "文件过大",
+            description: "图片大小不能超过 10MB",
+            variant: "destructive",
+          })
+          continue
+        }
+      }
+
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        if (e.target?.result && uploadedImages.length < 9) {
+          setUploadedImages((prev) => [...prev, e.target!.result as string])
+        }
+      }
+      reader.readAsDataURL(file)
+    }
   }
 
-  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileInput = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      handleFiles(Array.from(e.target.files))
+      await handleFiles(Array.from(e.target.files))
     }
   }
 
@@ -355,8 +437,8 @@ export function ImageEditor({ compact = false }: { compact?: boolean }) {
                     {uploadedImages.length < 9 && (
                       <label
                         className={`aspect-square rounded-lg border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-colors ${dragActive
-                            ? "border-yellow-400 bg-yellow-50"
-                            : "border-border hover:border-yellow-400/50 hover:bg-muted/50"
+                          ? "border-yellow-400 bg-yellow-50"
+                          : "border-border hover:border-yellow-400/50 hover:bg-muted/50"
                           }`}
                         onDragEnter={handleDrag}
                         onDragLeave={handleDrag}

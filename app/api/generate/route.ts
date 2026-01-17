@@ -77,18 +77,27 @@ export async function POST(req: Request) {
     if (model === "doubao-seedream-4.5") {
       console.log("Sending request to Volcengine API...");
 
+      const requestBody: any = {
+        model: "doubao-seedream-4-5-251128",
+        prompt: prompt,
+        size: "2K",
+        response_format: "url",
+        watermark: false
+      };
+
+      // Add image for image-to-image mode
+      if (mode === "image-to-image" && image) {
+        requestBody.image = image; // Supports both URL and base64 data URLs
+        requestBody.sequential_image_generation = "disabled";
+      }
+
       const response = await fetch("https://ark.cn-beijing.volces.com/api/v3/images/generations", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${process.env.ARK_API_KEY}`,
         },
-        body: JSON.stringify({
-          model: "doubao-seedream-4-5-251128",
-          prompt: prompt,
-          size: "2K", // Default to 2K as per example
-          watermark: false
-        })
+        body: JSON.stringify(requestBody)
       });
 
       const result = await response.json();
@@ -98,9 +107,7 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: result.error.message || "Volcengine API Error" }, { status: 500 });
       }
 
-      // Extract image URL
-      // The response structure is likely similar to OpenAI/standard image generation APIs
-      // Based on typical Volcengine/OpenAI compat: data[0].url
+      // Extract image URL from response
       const imageUrl = result.data?.[0]?.url;
 
       if (!imageUrl) {
@@ -111,7 +118,7 @@ export async function POST(req: Request) {
 
       return NextResponse.json({
         imageUrl: imageUrl,
-        result: prompt // Returning prompt as text result for consistency
+        result: prompt
       });
     }
 
