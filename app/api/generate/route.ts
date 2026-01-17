@@ -145,7 +145,8 @@ export async function POST(req: Request) {
         body: JSON.stringify({
           model: "glm-image", 
           prompt: prompt,
-          size: "1024x1024" 
+          size: "1024x1024",
+          watermark_enabled: false
         })
       });
 
