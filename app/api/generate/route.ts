@@ -125,6 +125,82 @@ export async function POST(req: Request) {
       });
     }
 
+    // Zhipu AI GLM-Image
+    if (cleanModel === "glm-image") {
+      console.log("Sending request to Zhipu AI API...");
+      
+      const apiKey = process.env.ZHIPU_API_KEY;
+      if (!apiKey) {
+         console.error("ZHIPU_API_KEY missing");
+         return NextResponse.json({ error: "Server configuration error: Zhipu Key missing" }, { status: 500 });
+      }
+
+      // 1. Submit Task
+      const submitResponse = await fetch("https://open.bigmodel.cn/api/paas/v4/async/images/generations", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: "glm-image", 
+          prompt: prompt,
+          size: "1024x1024" 
+        })
+      });
+
+      const submitData = await submitResponse.json();
+      
+      if (!submitResponse.ok || !submitData.id) {
+         console.error("Zhipu Submit Error:", submitData);
+         return NextResponse.json({ error: submitData.error?.message || "Zhipu API Submission Failed" }, { status: 500 });
+      }
+
+      const taskId = submitData.id;
+      console.log(`Zhipu Task ID: ${taskId}, starting polling...`);
+
+      // 2. Poll for Result
+      let attempts = 0;
+      const maxAttempts = 30; // 60s max
+      let imageUrl = null;
+
+      while (attempts < maxAttempts) {
+        await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2s
+        
+        const checkResponse = await fetch(`https://open.bigmodel.cn/api/paas/v4/async-result/${taskId}`, {
+           headers: {
+             "Authorization": `Bearer ${apiKey}`,
+           }
+        });
+        
+        const checkData = await checkResponse.json();
+        
+        if (checkData.task_status === 'SUCCESS') {
+           // Try to find image URL in common fields
+           // Structure might be data[0].url or image_result[0].url
+           const item = checkData.image_result?.[0] || checkData.images?.[0] || checkData.data?.[0];
+           if (item && item.url) {
+              imageUrl = item.url;
+           } else {
+             console.error("Zhipu Success but no URL found:", checkData);
+           }
+           break;
+        } else if (checkData.task_status === 'FAIL') {
+           console.error("Zhipu Task Failed:", checkData);
+           return NextResponse.json({ error: "Image generation failed at provider" }, { status: 500 });
+        }
+        
+        attempts++;
+      }
+
+      if (!imageUrl) {
+        return NextResponse.json({ error: "Generation timed out" }, { status: 504 });
+      }
+
+      await deductCredits();
+      return NextResponse.json({ imageUrl, result: prompt });
+    }
+
     // Default: OpenRouter (Nano Banana / Gemini)
     console.log("Using OpenRouter fallback...");
 

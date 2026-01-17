@@ -129,6 +129,16 @@ export function ImageEditor({ compact = false }: { compact?: boolean }) {
     }
   }, [user, fetchCredits])
 
+  useEffect(() => {
+    if (mode === "image-to-image" && model === "glm-image") {
+      setModel("nano-banana")
+      toast({
+        title: "Model Switched",
+        description: "GLM-4 Image only supports text-to-image. Switched to Nano Banana.",
+      })
+    }
+  }, [mode, model])
+
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault()
     e.stopPropagation()
@@ -399,6 +409,9 @@ export function ImageEditor({ compact = false }: { compact?: boolean }) {
                   <SelectContent>
                     <SelectItem value="nano-banana">🍌 Nano Banana</SelectItem>
                     <SelectItem value="doubao-seedream-4.5">🌋 Doubao Seedream 4.5</SelectItem>
+                    {mode === "text-to-image" && (
+                      <SelectItem value="glm-image">🤖 GLM-4 Image</SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground">
