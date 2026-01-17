@@ -55,6 +55,9 @@ export async function POST(req: Request) {
 
     const { image, prompt, mode, model } = await req.json();
 
+    const cleanModel = model ? model.trim() : "";
+    console.log(`[Generate API] Request received. Model: '${cleanModel}', Mode: '${mode}'`);
+
     if (!prompt) {
       return NextResponse.json({ error: "No prompt provided" }, { status: 400 });
     }
@@ -74,7 +77,7 @@ export async function POST(req: Request) {
     };
 
     // Volcengine Doubao Model
-    if (model === "doubao-seedream-4.5") {
+    if (cleanModel === "doubao-seedream-4.5") {
       console.log("Sending request to Volcengine API...");
 
       const requestBody: any = {
@@ -121,6 +124,9 @@ export async function POST(req: Request) {
         result: prompt
       });
     }
+
+    // Default: OpenRouter (Nano Banana / Gemini)
+    console.log("Using OpenRouter fallback...");
 
     // Text to Image Mode
     if (mode === "text-to-image") {
