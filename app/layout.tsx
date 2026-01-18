@@ -5,6 +5,9 @@ import { Analytics } from "@vercel/analytics/next"
 import Script from "next/script"
 import "./globals.css"
 
+import { FeedbackWidget } from "@/components/feedback-widget"
+import { Toaster } from "@/components/ui/toaster"
+
 const _geist = Geist({ subsets: ["latin"] })
 const _geistMono = Geist_Mono({ subsets: ["latin"] })
 
@@ -54,6 +57,8 @@ export default function RootLayout({
           `}
         </Script>
         {children}
+        <FeedbackWidget />
+        <Toaster />
         <Analytics />
       </body>
     </html>

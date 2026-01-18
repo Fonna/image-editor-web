@@ -1,6 +1,6 @@
 "use client"
 
-import { Home, History, CreditCard, LogOut, Banana } from "lucide-react"
+import { Home, History, CreditCard, LogOut, Banana, MessageSquare } from "lucide-react"
 import {
   Sidebar,
   SidebarContent,
@@ -33,6 +33,11 @@ const items = [
     title: "Billing",
     url: "/dashboard/billing",
     icon: CreditCard,
+  },
+  {
+    title: "Feedback",
+    url: "/dashboard/feedback",
+    icon: MessageSquare,
   },
 ]
 
