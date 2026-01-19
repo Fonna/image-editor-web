@@ -17,6 +17,33 @@ export const metadata: Metadata = {
     "Edit photos for free using the latest AI models. Switch instantly between models to find the best style while keeping characters consistent.",
   keywords: ['Free AI Editor', 'Multi-model AI', 'Seedream', 'NanoBanana', 'AI Inpainting', 'BananaImage', 'DOUBAO', 'GLM-IMAGE'],
   generator: "v0.app",
+  metadataBase: new URL("https://www.bananaimage.online"),
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: "https://www.bananaimage.online",
+    title: "BananaImage - Free AI Photo Editor | Try Multiple Models Online",
+    description: "Edit photos for free using the latest AI models. Switch instantly between models to find the best style while keeping characters consistent.",
+    siteName: "BananaImage",
+    images: [
+      {
+        url: "/ai-generated-artistic-image.jpg",
+        width: 1200,
+        height: 630,
+        alt: "BananaImage AI Photo Editor",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "BananaImage - Free AI Photo Editor | Try Multiple Models Online",
+    description: "Edit photos for free using the latest AI models. Switch instantly between models to find the best style while keeping characters consistent.",
+    images: ["/ai-generated-artistic-image.jpg"],
+    creator: "@BananaImage",
+  },
   icons: {
     icon: [
       {
