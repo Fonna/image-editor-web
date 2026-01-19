@@ -12,9 +12,10 @@ const _geist = Geist({ subsets: ["latin"] })
 const _geistMono = Geist_Mono({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "BananaImage - AI Image Editor | Edit Photos with Text",
+  title: "BananaImage - Free AI Photo Editor | Try Multiple Models Online",
   description:
-    "Transform any image with simple text prompts. BananaImage delivers consistent character editing and scene preservation. The future of AI image editing.",
+    "Edit photos for free using the latest AI models. Switch instantly between models to find the best style while keeping characters consistent.",
+  keywords: ['Free AI Editor', 'Multi-model AI', 'Seedream', 'NanoBanana', 'AI Inpainting', 'BananaImage', 'DOUBAO', 'GLM-IMAGE'],
   generator: "v0.app",
   icons: {
     icon: [

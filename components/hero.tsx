@@ -18,7 +18,7 @@ export function Hero() {
 
         <div className="flex items-center justify-center mb-6">
            <Badge className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-4 py-1 text-base animate-pulse">
-             ✨ New user gets 10 credits!
+             ✨ Try free. No credit card required! New user gets 10 credits
            </Badge>
         </div>
 
