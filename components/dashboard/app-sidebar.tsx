@@ -1,6 +1,6 @@
 "use client"
 
-import { Home, History, CreditCard, LogOut, Banana, MessageSquare } from "lucide-react"
+import { LayoutDashboard, History, CreditCard, LogOut, Banana, MessageSquare } from "lucide-react"
 import {
   Sidebar,
   SidebarContent,
@@ -20,9 +20,9 @@ import { createClient } from "@/lib/supabase/client"
 // Menu items.
 const items = [
   {
-    title: "Homepage",
-    url: "/",
-    icon: Home,
+    title: "Overview",
+    url: "/dashboard",
+    icon: LayoutDashboard,
   },
   {
     title: "History",
@@ -54,12 +54,12 @@ export function AppSidebar() {
   return (
     <Sidebar>
       <SidebarHeader>
-        <div className="flex items-center gap-2 p-2">
+        <Link href="/" className="flex items-center gap-2 p-2 hover:opacity-80 transition-opacity">
             <div className="bg-yellow-400/10 p-2 rounded-xl">
                 <Banana className="h-6 w-6 text-yellow-400" />
             </div>
             <span className="text-xl font-bold text-foreground">BananaImage</span>
-        </div>
+        </Link>
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
@@ -80,12 +80,15 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter>
+      <SidebarFooter className="border-t border-border/50 p-4">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton onClick={handleSignOut}>
-              <LogOut />
-              <span>Sign Out</span>
+            <SidebarMenuButton 
+              onClick={handleSignOut}
+              className="text-red-500 hover:text-red-600 hover:bg-red-500/10 transition-colors"
+            >
+              <LogOut className="h-4 w-4" />
+              <span className="font-medium">Sign Out</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

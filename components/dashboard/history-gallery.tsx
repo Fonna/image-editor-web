@@ -1,8 +1,9 @@
 "use client"
 
+import Link from "next/link"
 import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Clock, Download, Share2, MoreHorizontal, Loader2, Trash2 } from "lucide-react"
+import { Clock, Download, Share2, MoreHorizontal, Loader2, Trash2, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -23,7 +24,11 @@ type HistoryItem = {
   mode: string
 }
 
-export function HistoryGallery() {
+interface HistoryGalleryProps {
+  limit?: number;
+}
+
+export function HistoryGallery({ limit }: HistoryGalleryProps) {
   const [historyItems, setHistoryItems] = useState<HistoryItem[]>([])
   const [loading, setLoading] = useState(true)
   const { toast } = useToast()
@@ -31,8 +36,9 @@ export function HistoryGallery() {
   const fetchHistory = async () => {
     try {
       const guestId = localStorage.getItem("guest_id") || ""
+      const url = limit ? `/api/history?limit=${limit}` : "/api/history"
       
-      const res = await fetch("/api/history", {
+      const res = await fetch(url, {
         headers: {
           "X-Guest-Id": guestId
         }
@@ -56,7 +62,7 @@ export function HistoryGallery() {
 
   useEffect(() => {
     fetchHistory()
-  }, [])
+  }, [limit])
 
   const handleDownload = async (url: string, prompt: string) => {
     try {
@@ -95,6 +101,11 @@ export function HistoryGallery() {
           <p className="text-muted-foreground mt-1 max-w-sm">
             Generate your first image to see it appear here. Your creations will be saved automatically.
           </p>
+          {limit && (
+            <Button asChild className="mt-4" variant="outline">
+               <Link href="/">Create Image</Link>
+            </Button>
+          )}
         </CardContent>
       </Card>
     )
@@ -102,11 +113,18 @@ export function HistoryGallery() {
 
   return (
     <Card className="border-border/50 shadow-sm mt-8">
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="flex items-center gap-2">
           <Clock className="h-5 w-5 text-yellow-500" />
-          Recent Generations
+          {limit ? "Recent Creations" : "Generation History"}
         </CardTitle>
+        {limit && (
+          <Button variant="ghost" size="sm" asChild className="text-muted-foreground hover:text-foreground">
+            <Link href="/dashboard/history" className="flex items-center gap-1">
+              View All <ArrowRight className="h-4 w-4" />
+            </Link>
+          </Button>
+        )}
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

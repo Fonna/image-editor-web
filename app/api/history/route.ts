@@ -14,6 +14,10 @@ export async function GET(req: Request) {
        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const { searchParams } = new URL(req.url);
+    const limitParam = searchParams.get('limit');
+    const limit = limitParam ? parseInt(limitParam) : null;
+
     const adminSupabase = createAdminClient();
     
     let query = adminSupabase
@@ -25,6 +29,10 @@ export async function GET(req: Request) {
       query = query.eq('user_id', user.id);
     } else {
       query = query.eq('guest_id', guestId).is('user_id', null);
+    }
+
+    if (limit) {
+      query = query.limit(limit);
     }
 
     const { data, error } = await query;
