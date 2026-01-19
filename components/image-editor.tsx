@@ -219,10 +219,18 @@ export function ImageEditor({ compact = false }: { compact?: boolean }) {
     setShowGuestWarningDialog(false) // Close warning if open
 
     try {
+      // Get or create Guest ID
+      let guestId = localStorage.getItem("guest_id");
+      if (!guestId) {
+        guestId = crypto.randomUUID();
+        localStorage.setItem("guest_id", guestId);
+      }
+
       const response = await fetch("/api/generate", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "X-Guest-Id": guestId
         },
         body: JSON.stringify({
           image: mode === "image-to-image" ? uploadedImages[0] : undefined,

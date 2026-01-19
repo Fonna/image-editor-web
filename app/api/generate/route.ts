@@ -13,14 +13,13 @@ const openai = new OpenAI({
   },
 });
 
-const openRouter = new OpenRouter({
-  apiKey: process.env.OPENROUTER_API_KEY || "",
-});
-
 export async function POST(req: Request) {
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
+    
+    // Get Guest ID from headers
+    const guestId = req.headers.get("X-Guest-Id");
 
     // Credit Check for Logged-in Users
     let currentCredits = 0;
@@ -51,35 +50,89 @@ export async function POST(req: Request) {
           { status: 403 }
         );
       }
+    } else {
+       // Optional: Enforce Guest limits here via DB check if we wanted to be strict
+       // But currently we rely on frontend + localstorage for UX, and this backend logging for auditing.
     }
 
     const { image, prompt, mode, model } = await req.json();
-
-    const cleanModel = model ? model.trim() : "";
-    console.log(`[Generate API] Request received. Model: '${cleanModel}', Mode: '${mode}'`);
+    const cleanModel = model ? model.trim() : "unknown";
+    
+    console.log(`[Generate API] Request received. User: ${user?.id || 'Guest'}, Model: '${cleanModel}', Mode: '${mode}'`);
 
     if (!prompt) {
       return NextResponse.json({ error: "No prompt provided" }, { status: 400 });
     }
 
+    // Helper: Deduct Credits
     const deductCredits = async () => {
       if (user) {
-        // Deduct 2 credits
         const { error } = await adminSupabase
           .from('user_credits')
           .update({ credits: currentCredits - 2 })
           .eq('user_id', user.id);
-
-        if (error) {
-          console.error("Failed to deduct credits:", error);
-        }
+        if (error) console.error("Failed to deduct credits:", error);
       }
     };
 
-    // Volcengine Doubao Model
-    if (cleanModel === "doubao-seedream-4.5") {
-      console.log("Sending request to Volcengine API...");
+    // Helper: Save to Storage & DB
+    const saveResult = async (tempImageUrl: string) => {
+      try {
+        console.log("Downloading image from provider...", tempImageUrl);
+        const imageRes = await fetch(tempImageUrl);
+        if (!imageRes.ok) throw new Error("Failed to download generated image");
+        
+        const imageBlob = await imageRes.blob();
+        const buffer = await imageBlob.arrayBuffer();
+        
+        const fileName = `${user ? user.id : (guestId || 'anonymous')}/${Date.now()}.png`;
+        
+        console.log("Uploading to Supabase Storage:", fileName);
+        const { error: uploadError } = await adminSupabase
+          .storage
+          .from('generated_images')
+          .upload(fileName, buffer, {
+            contentType: 'image/png',
+            upsert: false
+          });
 
+        if (uploadError) {
+          console.error("Storage upload failed:", uploadError);
+          // Fallback: return the temp URL if upload fails, but don't save to DB strictly
+          return tempImageUrl; 
+        }
+
+        const { data: { publicUrl } } = adminSupabase
+          .storage
+          .from('generated_images')
+          .getPublicUrl(fileName);
+
+        // Save metadata to DB
+        console.log("Saving metadata to generations table...");
+        await adminSupabase.from('generations').insert({
+          user_id: user?.id || null,
+          guest_id: user ? null : guestId, // Only save guest_id if not logged in
+          prompt: prompt,
+          model: cleanModel,
+          mode: mode,
+          image_url: publicUrl,
+          credits_used: user ? 2 : 0, // Track "value" even if guests are free
+        });
+
+        return publicUrl;
+      } catch (e) {
+        console.error("Error in saveResult:", e);
+        return tempImageUrl; // Fail gracefully by returning original URL
+      }
+    };
+
+    let generatedImageUrl = null;
+    let finalResultText = prompt;
+
+    // --- AI GENERATION LOGIC ---
+
+    // 1. Volcengine Doubao
+    if (cleanModel === "doubao-seedream-4.5") {
       const requestBody: any = {
         model: "doubao-seedream-4-5-251128",
         prompt: prompt,
@@ -87,10 +140,8 @@ export async function POST(req: Request) {
         response_format: "url",
         watermark: false
       };
-
-      // Add image for image-to-image mode
       if (mode === "image-to-image" && image) {
-        requestBody.image = image; // Supports both URL and base64 data URLs
+        requestBody.image = image;
         requestBody.sequential_image_generation = "disabled";
       }
 
@@ -102,112 +153,47 @@ export async function POST(req: Request) {
         },
         body: JSON.stringify(requestBody)
       });
-
       const result = await response.json();
-      console.log("Volcengine Response:", JSON.stringify(result, null, 2));
-
-      if (result.error) {
-        return NextResponse.json({ error: result.error.message || "Volcengine API Error" }, { status: 500 });
-      }
-
-      // Extract image URL from response
-      const imageUrl = result.data?.[0]?.url;
-
-      if (!imageUrl) {
-        return NextResponse.json({ error: "No image URL in response" }, { status: 500 });
-      }
-
-      await deductCredits();
-
-      return NextResponse.json({
-        imageUrl: imageUrl,
-        result: prompt
-      });
+      
+      if (result.error) throw new Error(result.error.message || "Volcengine API Error");
+      generatedImageUrl = result.data?.[0]?.url;
     }
 
-    // Zhipu AI GLM-Image
-    if (cleanModel === "glm-image") {
-      console.log("Sending request to Zhipu AI API...");
-      
-      const apiKey = process.env.ZHIPU_API_KEY;
-      if (!apiKey) {
-         console.error("ZHIPU_API_KEY missing");
-         return NextResponse.json({ error: "Server configuration error: Zhipu Key missing" }, { status: 500 });
-      }
+    // 2. Zhipu AI
+    else if (cleanModel === "glm-image") {
+       const apiKey = process.env.ZHIPU_API_KEY;
+       if (!apiKey) throw new Error("ZHIPU_API_KEY missing");
 
-      // 1. Submit Task
-      const submitResponse = await fetch("https://open.bigmodel.cn/api/paas/v4/async/images/generations", {
+       const submitResponse = await fetch("https://open.bigmodel.cn/api/paas/v4/async/images/generations", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-          model: "glm-image", 
-          prompt: prompt,
-          size: "1024x1024",
-          watermark_enabled: false
-        })
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` },
+        body: JSON.stringify({ model: "glm-image", prompt: prompt, size: "1024x1024", watermark_enabled: false })
       });
-
       const submitData = await submitResponse.json();
-      
-      if (!submitResponse.ok || !submitData.id) {
-         console.error("Zhipu Submit Error:", submitData);
-         return NextResponse.json({ error: submitData.error?.message || "Zhipu API Submission Failed" }, { status: 500 });
-      }
+      if (!submitData.id) throw new Error(submitData.error?.message || "Zhipu API Submission Failed");
 
       const taskId = submitData.id;
-      console.log(`Zhipu Task ID: ${taskId}, starting polling...`);
-
-      // 2. Poll for Result
       let attempts = 0;
-      const maxAttempts = 30; // 60s max
-      let imageUrl = null;
-
-      while (attempts < maxAttempts) {
-        await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2s
-        
+      while (attempts < 30) {
+        await new Promise(resolve => setTimeout(resolve, 2000));
         const checkResponse = await fetch(`https://open.bigmodel.cn/api/paas/v4/async-result/${taskId}`, {
-           headers: {
-             "Authorization": `Bearer ${apiKey}`,
-           }
+           headers: { "Authorization": `Bearer ${apiKey}` }
         });
-        
         const checkData = await checkResponse.json();
-        
         if (checkData.task_status === 'SUCCESS') {
-           // Try to find image URL in common fields
-           // Structure might be data[0].url or image_result[0].url
            const item = checkData.image_result?.[0] || checkData.images?.[0] || checkData.data?.[0];
-           if (item && item.url) {
-              imageUrl = item.url;
-           } else {
-             console.error("Zhipu Success but no URL found:", checkData);
-           }
+           generatedImageUrl = item?.url;
            break;
         } else if (checkData.task_status === 'FAIL') {
-           console.error("Zhipu Task Failed:", checkData);
-           return NextResponse.json({ error: "Image generation failed at provider" }, { status: 500 });
+           throw new Error("Image generation failed at provider");
         }
-        
         attempts++;
       }
-
-      if (!imageUrl) {
-        return NextResponse.json({ error: "Generation timed out" }, { status: 504 });
-      }
-
-      await deductCredits();
-      return NextResponse.json({ imageUrl, result: prompt });
+      if (!generatedImageUrl) throw new Error("Generation timed out");
     }
 
-    // Default: OpenRouter (Nano Banana / Gemini)
-    console.log("Using OpenRouter fallback...");
-
-    // Text to Image Mode
-    if (mode === "text-to-image") {
-      console.log("Sending request to OpenRouter API via fetch...");
+    // 3. OpenRouter (Fallback / Text-to-Image)
+    else if (mode === "text-to-image") {
       const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -218,86 +204,64 @@ export async function POST(req: Request) {
         },
         body: JSON.stringify({
           model: "google/gemini-2.5-flash-image-preview",
-          messages: [
-            {
-              role: "user",
-              content: prompt,
-            },
-          ],
+          messages: [{ role: "user", content: prompt }],
         })
       });
-
-      const rawText = await response.text();
-      console.log("Raw OpenRouter Response:", rawText);
-
-      let result;
-      try {
-        result = JSON.parse(rawText);
-      } catch (e) {
-        console.error("Failed to parse JSON:", e);
-        return NextResponse.json({ error: "Invalid JSON from OpenRouter" }, { status: 500 });
-      }
-
-      // Manually extract images
+      const result = await response.json();
       const message = result.choices?.[0]?.message;
-      let extractedImageUrl = null;
-
-      if (message) {
-        if (result.choices[0].images && Array.isArray(result.choices[0].images)) {
-          extractedImageUrl = result.choices[0].images[0];
-        }
-        else if (message.images && Array.isArray(message.images)) {
-          const img = message.images[0];
-          extractedImageUrl = img.url || img.imageUrl?.url || img.image_url?.url;
-        }
+      finalResultText = message?.content;
+      
+      if (result.choices?.[0]?.images) generatedImageUrl = result.choices[0].images[0];
+      else if (message?.images) {
+         const img = message.images[0];
+         generatedImageUrl = img.url || img.imageUrl?.url || img.image_url?.url;
       }
+    }
 
-      // Deduct credits on success
+    // 4. OpenRouter (Image-to-Image)
+    else if (mode === "image-to-image") {
+       if (!image) return NextResponse.json({ error: "No image provided" }, { status: 400 });
+       const completion = await openai.chat.completions.create({
+        model: "google/gemini-2.5-flash-image",
+        messages: [{
+            role: "user",
+            content: [
+              { type: "text", text: prompt },
+              { type: "image_url", image_url: { url: image } },
+            ],
+          }],
+      });
+      // Gemini Flash often returns text description, not always a new image link directly unless configured.
+      // Assuming for now we just return the text result as we did before, 
+      // BUT if we want to save history, we can't save an image if none is generated.
+      // For this specific fallback case, we might skip image saving or save the input image? 
+      // Let's keep original behavior for now:
+      finalResultText = completion.choices[0].message.content;
+      await deductCredits();
+      return NextResponse.json({ result: finalResultText, full_response: completion });
+    }
+
+    // --- FINALIZE ---
+
+    if (generatedImageUrl) {
+      // Deduct credits FIRST (or after, depending on policy. Let's do it after successful gen)
       await deductCredits();
 
+      // Save to Storage & DB (Async but awaited to return the perm URL)
+      const permanentUrl = await saveResult(generatedImageUrl);
+
       return NextResponse.json({
-        full_response: result,
-        imageUrl: extractedImageUrl,
-        result: message?.content
+        imageUrl: permanentUrl, // Return the permanent URL to frontend
+        result: finalResultText
       });
+    } else {
+      return NextResponse.json({ error: "No image URL generated" }, { status: 500 });
     }
 
-    // Image to Image Mode
-    if (!image) {
-      return NextResponse.json({ error: "No image provided" }, { status: 400 });
-    }
-
-    const completion = await openai.chat.completions.create({
-      model: "google/gemini-2.5-flash-image",
-      messages: [
-        {
-          role: "user",
-          content: [
-            {
-              type: "text",
-              text: prompt,
-            },
-            {
-              type: "image_url",
-              image_url: {
-                url: image, // Assuming base64 data URL
-              },
-            },
-          ],
-        },
-      ],
-    });
-
-    const result = completion.choices[0].message.content;
-
-    // Deduct credits on success
-    await deductCredits();
-
-    return NextResponse.json({ result, full_response: completion });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error generating image:", error);
     return NextResponse.json(
-      { error: "Failed to generate image" },
+      { error: error.message || "Failed to generate image" },
       { status: 500 }
     );
   }
